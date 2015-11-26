@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="page-header">
+<h3>Create Standard VM</h3>
+</div>
+
+<style type="text/css">
+.blocks .btn
+{
+	width: 2.5em;
+	font-size: 3em;
+}
+.btn-primary, .btn-warning, .btn-success
+{
+	opacity: 0.7;
+}
+
+.active
+{
+	opacity: 1 !important;
+}
+
+.submit
+{
+	padding-top: 2em;
+	padding-bottom: 2em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+</style>
+
+<form method="POST">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+
+		<h4>Number of vCPUs</h4>
+		<div class="btn-group blocks" data-toggle="buttons">
+		  <label class="btn btn-primary">
+			<input type="radio" name="cpu" value="1"> 1
+		  </label>
+		  <label class="btn btn-primary">
+			<input type="radio" name="cpu" value="2"> 2
+		  </label>
+		  <label class="btn btn-primary">
+			<input type="radio" name="cpu" value="3"> 4
+		  </label>
+		  <label class="btn btn-primary">
+			<input type="radio" name="cpu" value="4"> 8
+		  </label>
+		</div>
+
+		<h4>Memory in GB</h4>
+		<div class="btn-group blocks" data-toggle="buttons">
+		  <label class="btn btn-success">
+			<input type="radio" name="ram" value="2"> 2
+		  </label>
+		  <label class="btn btn-success">
+			<input type="radio" name="ram" value="4"> 4
+		  </label>
+		  <label class="btn btn-success">
+			<input type="radio" name="ram" value="8"> 8
+		  </label>
+		  <label class="btn btn-success">
+			<input type="radio" name="ram" value="16"> 16
+		  </label>
+		</div>
+
+		<h4>Data disk size in GB</h4>
+		<div class="btn-group blocks" data-toggle="buttons">
+		  <label class="btn btn-warning">
+			<input type="radio" name="disk" value="50"> 50
+		  </label>
+		  <label class="btn btn-warning">
+			<input type="radio" name="disk" value="150"> 150
+		  </label>
+		  <label class="btn btn-warning">
+			<input type="radio" name="disk" value="350"> 350
+		  </label>
+		  <label class="btn btn-warning">
+			<input type="radio" name="disk" value="750"> 750
+		  </label>
+		</div>
+
+		<h4>Image</h4>
+		<div class="btn-group btn-group-vertical" data-toggle="buttons">
+		  <label class="btn btn-default btnl">
+			<input type="radio" name="template" value="linux"> RHEL 6
+		  </label>
+		  <label class="btn btn-default btnl">
+			<input type="radio" name="template" value="linux"> RHEL 7
+		  </label>
+		  <label class="btn btn-default btnl">
+			<input type="radio" name="template" value="windows"> Windows Server 2008
+		  </label>
+		  <label class="btn btn-default btnl">
+			<input type="radio" name="template" value="windows"> Windows Server 2012
+		  </label>
+		</div>
+
+	<div class="submit">
+		<button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-fw fa-plus"></i> Create</button>
+	</div>
+</form>
+
+{% endblock %}
