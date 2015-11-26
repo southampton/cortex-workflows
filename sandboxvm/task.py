@@ -1,9 +1,4 @@
-import syslog
-import time
-
 def run(helper, options):
-	domain = "soton.ac.uk"
-	network = "192.168.63.0/25"
 
 	helper.event("allocate_name", "Allocating a 'play' system name")
 	system_info = helper.lib.allocate_name('play', 'Automatic VM', helper.username)
