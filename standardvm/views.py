@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
-from cortex import app, NotFoundError, DisabledError
+from cortex import app
 import cortex.core
-import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
 # use decorators so the layout.html can list workflow views easily
@@ -12,6 +11,10 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 def standardvm_create():
 
 	if request.method == 'GET':
+
+		## Get the clusters list
+		
+
 		## Show form
 		return render_template(__name__ + "::create.html")
 
@@ -23,7 +26,6 @@ def standardvm_create():
 
 		## TODO validate form
 		## work out what to do
-		## call neocortex to do work
 
 		options = {}
 		options['cpu'] = cpu

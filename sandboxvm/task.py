@@ -24,7 +24,7 @@ def run(helper, options):
 	si = helper.lib.vmware_smartconnect('srv01197')
 
 	## Launch the task to clone the virtual machine
-	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", custspec=vm_spec)
+	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec)
 
 	## Wait for the task to complete
 	result = helper.lib.vmware_task_wait(task)
@@ -116,12 +116,12 @@ def run(helper, options):
 			helper.end_event(success=True, description="VM powered up")	
 
 		# Create the ServiceNow CMDB CI (disabled for now)
-		#helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
-		#try:
-		#	sys_id = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']), disk_gb=50 + int(options['disk']), ipaddr=ipv4addr)
-		#	helper.end_event(success=True, description="Created ServiceNow CMDB CI")
-		#	# TODO: Update Cortex entry to include sys_id
-		#except Exception as e:
-		#	helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
-		#	raise(e)
+		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
+		try:
+			sys_id = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']))
+			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
+			# TODO: Update Cortex entry to include sys_id
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
+			raise(e)
 		

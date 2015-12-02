@@ -88,6 +88,15 @@
 		  </label>
 		</div>
 
+		<h4>Location</h4>
+		<div class="btn-group btn-group-vertical" data-toggle="buttons">
+			{% for cluster in clusters %}
+			<label class="btn btn-default">
+				<input type="radio" name="cluster" value="{{ cluster.name }}"> {{cluster.name}}
+			</label>
+			{% endfor %}
+		</div>
+
 	<div class="submit">
 		<button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-fw fa-plus"></i> Create</button>
 	</div>
