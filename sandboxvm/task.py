@@ -1,9 +1,10 @@
+#### Sandbox VM Workflow Task
+
 def run(helper, options):
 
 	helper.event("allocate_name", "Allocating a 'play' system name")
 	system_info = helper.lib.allocate_name('play', 'Automatic VM', helper.username)
 	system_name = system_info.keys()[0]
-	## TODO ERROR HANDLING
 	helper.end_event(description="Allocated system name " + system_name)
 
 	helper.event("vm_clone", "Creating the virtual machine using VMware API")
@@ -25,24 +26,14 @@ def run(helper, options):
 
 	## Launch the task to clone the virtual machine
 	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec)
+	helper.lib.vmware_task_complete(task,"Failed to create the virtual machine")
+	helper.end_event(description="Created the virtual machine successfully")
 
-	## Wait for the task to complete
-	result = helper.lib.vmware_task_wait(task)
-	if result == False:
-		if hasattr(task.info.error,'msg'):
-			error_message = task.info.error.msg
-		else:
-			error_message = str(task.info.error)
-		helper.end_event(success=False,description="Failed to create the virtual machine: " + error_message)
-		raise Exception("VM creation failed: Failed to clone the virtual machine template")
-	else:
-		helper.end_event(success=True,description="Created the virtual machine successfully")
-	
 	## get the VM object and reconfigure it
 	vm = task.info.result
 
 	if vm == None:
-		raise Exception("VM creation failed: VMware API did not return a VM object reference")
+		raise RuntimeError("VM creation failed: VMware API did not return a VM object reference")
 	else:
 		helper.event("vm_reconfig_cpu", "Setting VM CPU configuration")
 
@@ -59,61 +50,30 @@ def run(helper, options):
 			total_cpu = 8
 			cpus_per_core = 4
 
+		cpus_per_core = 0
+
 		## Configure VM CPUs
 		task = helper.lib.vmware_vmreconfig_cpu(vm, total_cpu, cpus_per_core)
-		result = helper.lib.vmware_task_wait(task)
-		if result == False:
-			if hasattr(task.info.error, 'msg'):
-				error_message = task.info.error.msg
-			else:
-				error_message = str(task.info.error)
-			helper.end_event(success=False, description="Failed to set vCPU configuration: " + error_message)
-			raise Exception("VM creation failed: Failed to set vCPU configuration")
-		else:
-			helper.end_event(success=True, description="VM vCPU configuation saved")
+		helper.lib.vmware_task_complete(task,"Failed to set vCPU configuration")
+		helper.end_event(description="VM vCPU configuation saved")
 
 		# Configure VM RAM
 		helper.event("vm_reconfig_ram", "Setting VM RAM configuration")
 		task = helper.lib.vmware_vmreconfig_ram(vm, int(options['ram']) * 1024)
-		result = helper.lib.vmware_task_wait(task)
-		if result == False:
-			if hasattr(task.info.error,'msg'):
-				error_message = task.info.error.msg
-			else:
-				error_message = str(task.info.error)
-			helper.end_event(success=False, description="Failed to set VM RAM configuration: " + error_message)
-			raise Exception("VM creation failed: Failed to set VM RAM configuration")
-		else:
-			helper.end_event(success=True, description="VM RAM configuation saved")
+		helper.lib.vmware_task_complete(task,"Failed to set RAM configuration")
+		helper.end_event(description="VM RAM configuation saved")
 
 		# Add disk to the VM
 		helper.event("vm_add_disk", "Adding data disk to the VM")
 		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
-		result = helper.lib.vmware_task_wait(task)
-		if result == False:
-			if hasattr(task.info.error,'msg'):
-				error_message = task.info.error.msg
-			else:
-				error_message = str(task.info.error)
-			#print task.info.error
-			helper.end_event(success=False, description="Failed to add second disk: " + error_message)
-			raise Exception("VM creation failed: Failed to add second disk")
-		else:
-			helper.end_event(success=True, description="Data disk added to VM")
+		helper.lib.vmware_task_complete(task,"Could not add data disk to VM")
+		helper.end_event(description="Data disk added to VM")
 
 		# Power on the VM
 		helper.event("vm_poweron", "Powering the VM on for the first time")
 		task = helper.lib.vmware_vm_poweron(vm)
-		result = helper.lib.vmware_task_wait(task)
-		if result == False:
-			if hasattr(task.info.error,'msg'):
-				error_message = task.info.error.msg
-			else:
-				error_message = str(task.info.error)
-			helper.end_event(success=False, description="Failed to power on the VM: " + error_message)
-			raise Exception("VM creation failed: Failed to power on the VM")
-		else:
-			helper.end_event(success=True, description="VM powered up")	
+		helper.lib.vmware_task_complete(task,"Could not power on the VM")
+		helper.end_event(description="VM powered up")	
 
 		# Create the ServiceNow CMDB CI (disabled for now)
 		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
