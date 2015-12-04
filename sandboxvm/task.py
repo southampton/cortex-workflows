@@ -4,7 +4,9 @@ def run(helper, options):
 
 	helper.event("allocate_name", "Allocating a 'play' system name")
 	system_info = helper.lib.allocate_name('play', 'Automatic VM', helper.username)
+	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info.keys()[0]
+	system_dbid = system_info.values()[0]
 	helper.end_event(description="Allocated system name " + system_name)
 
 	helper.event("vm_clone", "Creating the virtual machine using VMware API")
@@ -21,7 +23,7 @@ def run(helper, options):
 		os_name = 'Windows Server 2012'
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type = os_type, os_domain = 'devdomain.soton.ac.uk', timezone = 85, domain_join_user= helper.config['AD_DEV_JOIN_USER'], domain_join_pass = helper.config['AD_DEV_JOIN_PASS'], fullname = 'University of Southampton', orgname = 'University of Southampton')
 
-	## connect to vcenter
+	## Connect to vCenter
 	si = helper.lib.vmware_smartconnect('srv01197')
 
 	## Launch the task to clone the virtual machine
@@ -50,8 +52,6 @@ def run(helper, options):
 			total_cpu = 8
 			cpus_per_core = 4
 
-		cpus_per_core = 0
-
 		## Configure VM CPUs
 		task = helper.lib.vmware_vmreconfig_cpu(vm, total_cpu, cpus_per_core)
 		helper.lib.vmware_task_complete(task,"Failed to set vCPU configuration")
@@ -78,9 +78,11 @@ def run(helper, options):
 		# Create the ServiceNow CMDB CI (disabled for now)
 		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
 		try:
-			sys_id = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']))
+			# Create the entry in ServiceNow
+			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']))
+			# Update Cortex systems table row with the sys_id
+			helper.lib.set_link_ids(system_dbid, sys_id)
 			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
-			# TODO: Update Cortex entry to include sys_id
 		except Exception as e:
 			helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
 			raise(e)
