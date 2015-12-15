@@ -25,6 +25,7 @@ def sandboxvm_create():
 		disk     = request.form['disk']
 		template = request.form['template']
 		cluster  = request.form['cluster']
+		env      = request.form['environment']
 
 		# Validate CPU count
 		if int(cpu) not in cpu_list:
@@ -40,6 +41,10 @@ def sandboxvm_create():
 
 		# Validate cluster
 		if cluster not in [c['name'] for c in clusters]:
+			abort(400)
+
+		# Validate environment
+		if env not in ['prod', 'preprod', 'dev']:
 			abort(400)
 
 		# Build options

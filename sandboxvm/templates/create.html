@@ -36,52 +36,78 @@
 <form method="POST">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 
-		<h4>Number of vCPUs</h4>
-		<div class="btn-group blocks" data-toggle="buttons">
+	<div class="row">
+		<div class="col-md-6">
+			<h4>Number of vCPUs</h4>
+			<div class="btn-group blocks" data-toggle="buttons">
 {% for cpu in cpu_list -%}
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="{{ cpu }}"> {{ cpu }}
-		  </label>
+				  <label class="btn btn-primary">
+					<input type="radio" name="cpu" value="{{ cpu }}"> {{ cpu }}
+				  </label>
 {%- endfor %}
+			</div>
 		</div>
-
-		<h4>Memory in GB</h4>
-		<div class="btn-group blocks" data-toggle="buttons">
+		<div class="col-md-6">
+			<h4>Memory in GB</h4>
+			<div class="btn-group blocks" data-toggle="buttons">
 {% for mem in mem_list -%}
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="{{ mem }}"> {{ mem }}
-		  </label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="{{ mem }}"> {{ mem }}
+				</label>
 {%- endfor %}
+			</div>
 		</div>
+	</div>
 
-		<h4>Data disk size in GB</h4>
-		<div class="btn-group blocks" data-toggle="buttons">
+	<div class="row">
+		<div class="col-md-6">
+			<h4>Environment</h4>
+			<div class="btn-group blocks" data-toggle="buttons">
+				<label class="btn btn-default">
+					<input type="radio" name="environment" value="dev" /><span style="font-size:12pt;position:relative;top:-11px">Dev</span>
+				</label>
+				<label class="btn btn-default">
+					<input type="radio" name="environment" value="preprod" /><span style="font-size:12pt;position:relative;top:-11px">Pre-prod</span>
+				</label>
+				<label class="btn btn-default">
+					<input type="radio" name="environment" value="prod" /><span style="font-size:12pt;position:relative;top:-11px">Prod</span>
+				</label>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<h4>Data disk size in GB</h4>
+			<div class="btn-group blocks" data-toggle="buttons">
 {% for disk in disk_list -%}
-		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="{{ disk }}"> {{ disk }}
-		  </label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="{{ disk }}"> {{ disk }}
+				</label>
 {%- endfor %}
+			</div>
 		</div>
-
-		<h4>Image</h4>
-		<div class="btn-group btn-group-vertical" data-toggle="buttons">
-		  <label class="btn btn-default btnl">
-			<input type="radio" name="template" value="linux"> RHEL 6
-		  </label>
-		  <label class="btn btn-default btnl">
-			<input type="radio" name="template" value="windows"> Windows Server 2012
-		  </label>
+	</div>
+	<div class="row">
+		<div class="col-md-6">
+			<h4>Image</h4>
+			<div class="btn-group btn-group-vertical" data-toggle="buttons">
+				<label class="btn btn-default btnl">
+					<input type="radio" name="template" value="linux"> RHEL 6
+				</label>
+				<label class="btn btn-default btnl">
+					<input type="radio" name="template" value="windows"> Windows Server 2012
+				</label>
+			</div>
 		</div>
-
-		<h4>Location</h4>
-		<div class="btn-group btn-group-vertical" data-toggle="buttons">
-			{% for cluster in clusters %}
-			<label class="btn btn-default">
-				<input type="radio" name="cluster" value="{{ cluster.name }}"> {{cluster.name}}
-			</label>
-			{% endfor %}
+		<div class="col-md-6">
+			<h4>Location</h4>
+			<div class="btn-group btn-group-vertical" data-toggle="buttons">
+{% for cluster in clusters -%}
+				<label class="btn btn-default">
+					<input type="radio" name="cluster" value="{{ cluster.name }}"> {{cluster.name}}
+				</label>
+{%- endfor %}
+			</div>
 		</div>
-
+	</div>
 	<div class="submit">
 		<button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-fw fa-plus"></i> Create</button>
 	</div>

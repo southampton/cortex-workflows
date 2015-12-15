@@ -76,12 +76,27 @@ def run(helper, options):
 		helper.lib.vmware_task_complete(task,"Could not power on the VM")
 		helper.end_event(description="VM powered up")	
 
-		# Update VMware cache
+		# Update VMware cache item (so we don't have to wait for the next run 
+		# of the scheduled VMware import)
 		helper.event("update_cache", "Updating Cortex VM cache item")
 		helper.lib.update_vm_cache(vm, 'srv01197')
 		helper.end_event("Updated Cortex VM cache item")
 
+		# Automatically register Linux VMs with the built in Puppet ENC
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
 			helper.event("puppet_enc_register", "Registering with Puppet ENC")
 			helper.lib.puppet_enc_register(system_dbid, system_name + ".soton.ac.uk", "production")
 			helper.end_event("Registered with Puppet ENC")
+
+		# Create the ServiceNow CMDB CI
+		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
+		try:
+			# Create the entry in ServiceNow
+			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']))
+			# Update Cortex systems table row with the sys_id
+			helper.lib.set_link_ids(system_dbid, sys_id)
+			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
+			raise(e)
+
