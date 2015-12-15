@@ -64,10 +64,11 @@ def run(helper, options):
 		helper.end_event(description="VM RAM configuation saved")
 
 		# Add disk to the VM
-		helper.event("vm_add_disk", "Adding data disk to the VM")
-		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
-		helper.lib.vmware_task_complete(task,"Could not add data disk to VM")
-		helper.end_event(description="Data disk added to VM")
+		if int(options['disk']) > 0:
+			helper.event("vm_add_disk", "Adding data disk to the VM")
+			task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
+			helper.lib.vmware_task_complete(task,"Could not add data disk to VM")
+			helper.end_event(description="Data disk added to VM")
 
 		# Power on the VM
 		helper.event("vm_poweron", "Powering the VM on for the first time")
@@ -75,15 +76,12 @@ def run(helper, options):
 		helper.lib.vmware_task_complete(task,"Could not power on the VM")
 		helper.end_event(description="VM powered up")	
 
-		# Create the ServiceNow CMDB CI (disabled for now)
-		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
-		try:
-			# Create the entry in ServiceNow
-			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']))
-			# Update Cortex systems table row with the sys_id
-			helper.lib.set_link_ids(system_dbid, sys_id)
-			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
-		except Exception as e:
-			helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
-			raise(e)
-		
+		# Update VMware cache
+		helper.event("update_cache", "Updating Cortex VM cache item")
+		helper.lib.update_vm_cache(vm, 'srv01197')
+		helper.end_event("Updated Cortex VM cache item")
+
+		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+			helper.event("puppet_enc_register", "Registering with Puppet ENC")
+			helper.lib.puppet_enc_register(system_dbid, system_name + ".soton.ac.uk", "production")
+			helper.end_event("Registered with Puppet ENC")

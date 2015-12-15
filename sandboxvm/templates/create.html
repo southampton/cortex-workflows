@@ -38,44 +38,29 @@
 
 		<h4>Number of vCPUs</h4>
 		<div class="btn-group blocks" data-toggle="buttons">
+{% for cpu in cpu_list -%}
 		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="1"> 1
+			<input type="radio" name="cpu" value="{{ cpu }}"> {{ cpu }}
 		  </label>
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="2"> 2
-		  </label>
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="3"> 4
-		  </label>
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="4"> 8
-		  </label>
+{%- endfor %}
 		</div>
 
 		<h4>Memory in GB</h4>
 		<div class="btn-group blocks" data-toggle="buttons">
+{% for mem in mem_list -%}
 		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="2"> 2
+			<input type="radio" name="ram" value="{{ mem }}"> {{ mem }}
 		  </label>
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="4"> 4
-		  </label>
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="8"> 8
-		  </label>
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="16"> 16
-		  </label>
+{%- endfor %}
 		</div>
 
 		<h4>Data disk size in GB</h4>
 		<div class="btn-group blocks" data-toggle="buttons">
+{% for disk in disk_list -%}
 		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="50"> 50
+			<input type="radio" name="disk" value="{{ disk }}"> {{ disk }}
 		  </label>
-		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="100"> 100
-		  </label>
+{%- endfor %}
 		</div>
 
 		<h4>Image</h4>
