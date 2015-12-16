@@ -14,10 +14,11 @@ def sandboxvm_create():
 	disk_list = [0, 50, 100]
 
 	clusters = cortex.core.vmware_list_clusters("srv01197")
+	environments = cortex.core.get_cmdb_environments()
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", cpu_list=cpu_list, mem_list=mem_list, disk_list=disk_list, clusters=clusters)
+		return render_template(__name__ + "::create.html", cpu_list=cpu_list, mem_list=mem_list, disk_list=disk_list, clusters=clusters, environments=environments)
 
 	elif request.method == 'POST':
 		cpu      = request.form['cpu']
@@ -44,7 +45,7 @@ def sandboxvm_create():
 			abort(400)
 
 		# Validate environment
-		if env not in ['prod', 'preprod', 'dev']:
+		if env not in [e['id'] for e in environments]:
 			abort(400)
 
 		# Build options

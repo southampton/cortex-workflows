@@ -63,15 +63,11 @@
 		<div class="col-md-6">
 			<h4>Environment</h4>
 			<div class="btn-group blocks" data-toggle="buttons">
+{% for environment in environments -%}
 				<label class="btn btn-default">
-					<input type="radio" name="environment" value="dev" /><span style="font-size:12pt;position:relative;top:-11px">Dev</span>
+					<input type="radio" name="environment" value="{{ environment.id }}" /><span style="font-size:12pt;position:relative;top:-11px">{{ environment.short_name }}</span>
 				</label>
-				<label class="btn btn-default">
-					<input type="radio" name="environment" value="preprod" /><span style="font-size:12pt;position:relative;top:-11px">Pre-prod</span>
-				</label>
-				<label class="btn btn-default">
-					<input type="radio" name="environment" value="prod" /><span style="font-size:12pt;position:relative;top:-11px">Prod</span>
-				</label>
+{%- endfor %}
 			</div>
 		</div>
 		<div class="col-md-6">
