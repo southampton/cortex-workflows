@@ -15,7 +15,7 @@ def run(helper, options):
 	if options['template'] == 'linux':
 		template_name = 'autotest_rhel6template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
-		os_name = 'Red Hat Enterprise Linux 6'
+		os_name = 'Red Hat Enterprise Linux  6' # Don't delete the second space for now, ServiceNow currently needs it :(
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type = os_type, os_domain = 'soton.ac.uk', timezone = 'Europe/London')
 	else:
 		template_name = '2012R2_Template'
@@ -92,7 +92,7 @@ def run(helper, options):
 		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
 		try:
 			# Create the entry in ServiceNow
-			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']))
+			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']), environment=options['env'])
 			# Update Cortex systems table row with the sys_id
 			helper.lib.set_link_ids(system_dbid, sys_id)
 			helper.end_event(success=True, description="Created ServiceNow CMDB CI")

@@ -55,6 +55,7 @@ def sandboxvm_create():
 		options['disk'] = disk
 		options['template'] = template
 		options['cluster'] = cluster
+		options['env'] = env
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.core.neocortex_connect()
