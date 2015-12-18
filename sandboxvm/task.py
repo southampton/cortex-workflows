@@ -73,6 +73,8 @@ def run(helper, options):
 		# Power on the VM
 		helper.event("vm_poweron", "Powering the VM on for the first time")
 		task = helper.lib.vmware_vm_poweron(vm)
+		if not helper.lib.vmware_wait_for_poweron(vm, 30):
+			helper.lib.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
 		helper.lib.vmware_task_complete(task,"Could not power on the VM")
 		helper.end_event(description="VM powered up")	
 
