@@ -105,8 +105,45 @@
 		</div>
 	</div>
 	<div class="submit">
-		<button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-fw fa-plus"></i> Create</button>
+		<button id="create" type="submit" class="btn btn-primary btn-submit"><i class="fa fa-fw fa-plus"></i> Create</button>
 	</div>
 </form>
+
+<script type="text/javascript">
+$('#create').click(function(e) {
+	if ($("label.active input[name='cpu']").length == 0)
+	{
+		alert('You must select how many vCPUs to allocate');
+	}
+	else if ($("label.active input[name='ram']").length == 0)
+	{
+		alert('You must select how much RAM to allocate');
+	}
+	else if ($("label.active input[name='environment']").length == 0)
+	{
+		alert('You must select an environment');
+	}
+	else if ($("label.active input[name='disk']").length == 0)
+	{
+		alert('You must select a data disk size');
+	}
+	else if ($("label.active input[name='template']").length == 0)
+	{
+		alert('You must select a VM image to use');
+	}
+	else if ($("label.active input[name='cluster']").length == 0)
+	{
+		alert('You must select a destination cluster');
+	}
+	else
+	{
+		return true;
+	}
+	
+	// We've hit an error condition, don't allow the form to submit
+	e.preventDefault();
+	return false;
+});
+</script>
 
 {% endblock %}
