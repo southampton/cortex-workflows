@@ -28,7 +28,7 @@ def run(helper, options):
 
 	## Launch the task to clone the virtual machine
 	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec)
-	helper.lib.vmware_task_complete(task,"Failed to create the virtual machine")
+	helper.lib.vmware_task_complete(task, "Failed to create the virtual machine")
 	helper.end_event(description="Created the virtual machine successfully")
 
 	## get the VM object and reconfigure it
@@ -54,28 +54,28 @@ def run(helper, options):
 
 		## Configure VM CPUs
 		task = helper.lib.vmware_vmreconfig_cpu(vm, total_cpu, cpus_per_core)
-		helper.lib.vmware_task_complete(task,"Failed to set vCPU configuration")
+		helper.lib.vmware_task_complete(task, "Failed to set vCPU configuration")
 		helper.end_event(description="VM vCPU configuation saved")
 
 		# Configure VM RAM
 		helper.event("vm_reconfig_ram", "Setting VM RAM configuration")
 		task = helper.lib.vmware_vmreconfig_ram(vm, int(options['ram']) * 1024)
-		helper.lib.vmware_task_complete(task,"Failed to set RAM configuration")
+		helper.lib.vmware_task_complete(task, "Failed to set RAM configuration")
 		helper.end_event(description="VM RAM configuation saved")
 
 		# Add disk to the VM
 		if int(options['disk']) > 0:
 			helper.event("vm_add_disk", "Adding data disk to the VM")
 			task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
-			helper.lib.vmware_task_complete(task,"Could not add data disk to VM")
+			helper.lib.vmware_task_complete(task, "Could not add data disk to VM")
 			helper.end_event(description="Data disk added to VM")
 
 		# Power on the VM
 		helper.event("vm_poweron", "Powering the VM on for the first time")
 		task = helper.lib.vmware_vm_poweron(vm)
+		helper.lib.vmware_task_complete(task, "Could not power on the VM")
 		if not helper.lib.vmware_wait_for_poweron(vm, 30):
 			helper.lib.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
-		helper.lib.vmware_task_complete(task,"Could not power on the VM")
 		helper.end_event(description="VM powered up")	
 
 		# Update VMware cache item (so we don't have to wait for the next run 

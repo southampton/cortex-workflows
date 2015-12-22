@@ -3,13 +3,14 @@
 
 <div class="page-header">
 <h3>Create Standard VM</h3>
+<p class="text-muted"><strong>This workflow is currently not operational. Please do not attempt to use it.</strong></p>
 </div>
 
 <style type="text/css">
 .blocks .btn
 {
 	width: 2.5em;
-	font-size: 3em;
+	font-size: 2.6em;
 }
 .btn-primary, .btn-warning, .btn-success
 {
@@ -31,78 +32,341 @@
 {
 	font-size: 2em;
 }
+
+div.specname
+{
+	font-size: 18pt;
+	float:left;
+	line-height: 90%;
+	padding-right: 0.4em;
+}
+
+div.specdetails
+{
+	float:left;
+	text-align: left
+}
+
+div.col-md-2
+{
+	text-align: center;
+}
 </style>
 
-<form method="POST">
+<form method="POST" action="/">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<input type="hidden" id="total_cpus" name="total_cpus" value="" />
+	<input type="hidden" id="total_ram" name="total_ram" value="" />
+	<input type="hidden" id="total_disk" name="total_disk" value="" />
 
-		<h4>Number of vCPUs</h4>
-		<div class="btn-group blocks" data-toggle="buttons">
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="1"> 1
-		  </label>
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="2"> 2
-		  </label>
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="3"> 4
-		  </label>
-		  <label class="btn btn-primary">
-			<input type="radio" name="cpu" value="4"> 8
-		  </label>
+	<div class="row">
+		<div class="col-md-2">
+			<h4>Base Specification</h4>
+			<div class="btn-group-vertical" data-toggle="buttons" id="specs">
+				<label class="btn btn-primary active">
+					<input type="radio" name="spec" value="spec1"><div class="specname">1</div><div class="specdetails">1 vCPU<br/>2 GiB RAM<br/>100 GiB Disk</div><div class="clearfix"></div>
+				</label>
+				<label class="btn btn-primary">
+					<input type="radio" name="spec" value="spec2"><div class="specname">2</div><div class="specdetails">2 vCPUs<br/>4 GiB RAM<br/>200 GiB Disk</div><div class="clearfix"></div>
+				</label>
+				<label class="btn btn-primary">
+					<input type="radio" name="spec" value="spec3"><div class="specname">3</div><div class="specdetails">4 vCPUs<br/>8 GiB RAM<br/>400 GiB Disk</div><div class="clearfix"></div>
+				</label>
+				<label class="btn btn-primary">
+					<input type="radio" name="spec" value="spec4"><div class="specname">4</div><div class="specdetails">8 vCPUs<br/>16 GiB RAM<br/>800 GiB Disk</div><div class="clearfix"></div>
+				</label>
+			</div>
 		</div>
-
-		<h4>Memory in GB</h4>
-		<div class="btn-group blocks" data-toggle="buttons">
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="2"> 2
-		  </label>
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="4"> 4
-		  </label>
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="8"> 8
-		  </label>
-		  <label class="btn btn-success">
-			<input type="radio" name="ram" value="16"> 16
-		  </label>
+		<div class="col-md-2">
+			<h4>Additional vCPUs</h4>
+			<div class="btn-group-vertical blocks" data-toggle="buttons">
+			  <label class="btn btn-primary active">
+				<input type="radio" name="cpu" value="0"> 0
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="1"> 1
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="2"> 2
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="3"> 3
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="4"> 4
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="5"> 5
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="6"> 6
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="7"> 7
+			  </label>
+			  <label class="btn btn-primary">
+				<input type="radio" name="cpu" value="8"> 8
+			  </label>
+			</div>
 		</div>
-
-		<h4>Data disk size in GB</h4>
-		<div class="btn-group blocks" data-toggle="buttons">
-		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="50"> 50
-		  </label>
-		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="150"> 150
-		  </label>
-		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="350"> 350
-		  </label>
-		  <label class="btn btn-warning">
-			<input type="radio" name="disk" value="750"> 750
-		  </label>
+		<div class="col-md-2">
+			<h4>Additional RAM (GiB)</h4>
+			<div class="btn-group-vertical blocks" data-toggle="buttons">
+				<label class="btn btn-success active">
+					<input type="radio" name="ram" value="0"> 0
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="2"> 2
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="4"> 4
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="6"> 6
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="8"> 8
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="10"> 10
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="12"> 12
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="14"> 14
+				</label>
+				<label class="btn btn-success">
+					<input type="radio" name="ram" value="16"> 16
+				</label>
+			</div>
 		</div>
-
-		<h4>Image</h4>
-		<div class="btn-group btn-group-vertical" data-toggle="buttons">
-		  <label class="btn btn-default btnl">
-			<input type="radio" name="template" value="linux"> RHEL 6
-		  </label>
-		  <label class="btn btn-default btnl">
-			<input type="radio" name="template" value="linux"> RHEL 7
-		  </label>
-		  <label class="btn btn-default btnl">
-			<input type="radio" name="template" value="windows"> Windows Server 2008
-		  </label>
-		  <label class="btn btn-default btnl">
-			<input type="radio" name="template" value="windows"> Windows Server 2012
-		  </label>
+		<div class="col-md-2">
+			<h4>Additional Disk (GiB)</h4>
+			<div class="btn-group-vertical blocks" data-toggle="buttons">
+				<label class="btn btn-warning active">
+					<input type="radio" name="disk" value="0"> 0
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="100"> 100
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="200"> 200
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="300"> 300
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="400"> 400
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="500"> 500
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="600"> 600
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="700"> 700
+				</label>
+				<label class="btn btn-warning">
+					<input type="radio" name="disk" value="800"> 800
+				</label>
+			</div>
 		</div>
+		<div class="col-md-2">
+			<h4>Image</h4>
+			<div class="btn-group btn-group-vertical" data-toggle="buttons">
+				<label class="btn btn-default btnl">
+					<input type="radio" name="template" value="rhel6"> RHEL 6
+				</label>
+				<label class="btn btn-default btnl">
+					<input type="radio" name="template" value="rhel7"> RHEL 7
+				</label>
+				<label class="btn btn-default btnl">
+					<input type="radio" name="template" value="windows_server_2008"> Windows Server 2008
+				</label>
+				<label class="btn btn-default btnl">
+					<input type="radio" name="template" value="windows_server_2012"> Windows Server 2012
+				</label>
+			</div>
+			<h4 style="margin-top:1em">Environment</h4>
+			<div class="btn-group btn-group-vertical" data-toggle="buttons">
+{% for environment in environments -%}
+				<label class="btn btn-default">
+					<input type="radio" name="environment" value="{{ environment.id }}" />{{ environment.name }}
+				</label>
+{%- endfor %}
+			</div>
+			<h4 style="margin-top:1em">Location</h4>
+			<div class="btn-group btn-group-vertical" data-toggle="buttons">
+{% for cluster in clusters -%}
+				<label class="btn btn-default">
+					<input type="radio" name="cluster" value="{{ cluster.name }}"> {{cluster.name}}
+				</label>
+{%- endfor %}
+			</div>
 
-	<div class="submit">
-		<button type="submit" class="btn btn-primary btn-submit"><i class="fa fa-fw fa-plus"></i> Create</button>
+		</div>
+		<div class="col-md-2">
+			<h4><strong>Totals</strong></h4>
+			<div style="font-size: 120%">
+				<div><strong>vCPUs:</strong> <span id="val_vcpus">0</span></div>
+				<div><strong>RAM:</strong> <span id="val_ram">0</span> GiB</div>
+				<div><strong>Disk:</strong> <span id="val_disk">0</span> GiB</div>
+				<div><strong>Cost:</strong> £<span id="val_cost">0</span>/year</div>
+			</div>
+	
+			<div class="submit">
+				<button type="submit" class="btn btn-primary btn-submit" id="create"><i class="fa fa-fw fa-plus"></i> Create</button>
+			</div>
+		</div>
 	</div>
 </form>
+<script type="text/javascript">
+// Dictionary of base VM specifications
+var specs = {
+	"spec1": {
+		"name": "VM Specification 1",
+		"vcpus": 1,
+		"ram": 2,
+		"disk": 100,
+		"cost": 100,
+	},
+	"spec2": {
+		"name": "VM Specification 2",
+		"vcpus": 2,
+		"ram": 4,
+		"disk": 200,
+		"cost": 200,
+	},
+	"spec3": {
+		"name": "VM Specification 3",
+		"vcpus": 4,
+		"ram": 8,
+		"disk": 400,
+		"cost": 400,
+	},
+	"spec4": {
+		"name": "VM Specification 4",
+		"vcpus": 8,
+		"ram": 16,
+		"disk": 800,
+		"cost": 800,
+	},
+};
 
+// Specify an order to display them in as dictionaries aren't ordered
+var specs_order = ["spec1", "spec2", "spec3", "spec4"]
+
+// Cost in pounds for additional things
+var cost_per_vcpu = 30;
+var cost_per_gb_ram = 15;
+var cost_per_gb_disk = 0.3;
+
+/*****************************************************************************/
+
+function updateTotals()
+{
+	// Initialise variables
+	var vcpus = 0;
+	var ram = 0;
+	var disk = 0;
+	var cost = 0;
+	
+	// See what specification is selected
+	var spec = $('label.active input[name=spec]')
+	if (spec.length != 0)
+	{
+		// Extract information from specs
+		var spec = specs[$(spec[0]).val()];
+		vcpus = spec['vcpus'];
+		ram = spec['ram'];
+		disk = spec['disk'];
+		cost = spec['cost'];
+
+		// Put on the additional CPUs
+		var add_vcpus = $('label.active input[name=cpu]');
+		if (add_vcpus.length != 0)
+		{
+			vcpus = vcpus + parseInt($(add_vcpus[0]).val());
+			cost  = cost  + parseInt($(add_vcpus[0]).val()) * cost_per_vcpu;
+		}
+
+		// Put on the additional RAM
+		var add_ram = $('label.active input[name=ram]');
+		if (add_ram.length != 0)
+		{
+			ram  = ram  + parseInt($(add_ram[0]).val());
+			cost = cost + parseInt($(add_ram[0]).val()) * cost_per_gb_ram;
+		}
+
+		// Put on the additional disk
+		var add_disk = $('label.active input[name=disk]');
+		if (add_disk.length != 0)
+		{
+			disk = disk + parseInt($(add_disk[0]).val());
+			cost = cost + parseInt($(add_disk[0]).val()) * cost_per_gb_disk;
+		}
+
+		// Update display
+		$('#val_vcpus').text(vcpus);
+		$('#val_ram').text(ram);
+		$('#val_disk').text(disk);
+		$('#val_cost').text(cost);
+
+		// Update form
+		$('#total_cpus').val(vcpus);
+		$('#total_ram').val(ram);
+		$('#total_disk').val(disk);
+	}
+}
+
+// Update the totals at startup
+$(document).ready(function()
+{
+	first = true
+	html = ""
+
+	// Generate our base specification buttons
+	for (idx in specs_order)
+	{
+		spec = specs_order[idx];
+		html = html + '<label class="btn btn-primary' + (first ? ' active' : '') + '"><input type="radio" name="spec" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + specs[spec].vcpus + ' vCPU<br/>' + specs[spec].ram + ' GiB RAM<br/>' + specs[spec].disk + ' GiB Disk</div><div class="clearfix"></div></label>';
+		$('#specs').html(html);
+
+		if (first) { first = false; }
+	}
+
+	// Update the totals when the inputs change
+	$('input').change(function() { updateTotals(); });
+	
+	updateTotals();
+});
+
+$('#create').click(function(e) {
+	if ($("label.active input[name='template']").length == 0)
+	{
+		alert('You must select a VM image to use');
+	}
+	else if ($("label.active input[name='environment']").length == 0)
+	{
+		alert('You must select an environment');
+	}
+	else if ($("label.active input[name='cluster']").length == 0)
+	{
+		alert('You must select a location');
+	}
+	else
+	{
+		// Temporary as this workflow is not operational
+		e.preventDefault();
+		return false;
+		//return true;
+	}
+
+	// We've hit an error condition, don't allow the form to submit
+	e.preventDefault();
+	return false;
+});
+</script>
 {% endblock %}
