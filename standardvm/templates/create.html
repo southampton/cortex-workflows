@@ -1,20 +1,27 @@
 {% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='/css/ext/bootstrap-slider.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='/js/ext/bootstrap-slider.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='/css/ext/bootstrap-select.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='/js/ext/bootstrap-select.min.js') }}"></script>
+{% endblock %}
 {% block body %}
 
 <div class="page-header">
 <h3>Create Standard VM</h3>
-<p class="text-muted"><strong>This workflow is currently not operational. Please do not attempt to use it.</strong></p>
+<!--<p class="text-muted"><strong>This workflow is currently not operational. Please do not attempt to use it.</strong></p>-->
 </div>
 
 <style type="text/css">
 .blocks .btn
 {
 	width: 2.5em;
-	font-size: 2.6em;
 }
+
 .btn-primary, .btn-warning, .btn-success
 {
 	opacity: 0.7;
+	font-size: 14px;
 }
 
 .active
@@ -24,8 +31,8 @@
 
 .submit
 {
-	padding-top: 2em;
 	padding-bottom: 2em;
+	margin-left: 1em;
 }
 
 .btn-submit
@@ -35,7 +42,7 @@
 
 div.specname
 {
-	font-size: 18pt;
+	font-size: 200%; /* Relative to btn-primary */
 	float:left;
 	line-height: 90%;
 	padding-right: 0.4em;
@@ -53,171 +60,111 @@ div.col-md-2
 }
 </style>
 
-<form method="POST" action="/">
+<form method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<input type="hidden" id="total_cpus" name="total_cpus" value="" />
 	<input type="hidden" id="total_ram" name="total_ram" value="" />
 	<input type="hidden" id="total_disk" name="total_disk" value="" />
 
 	<div class="row">
-		<div class="col-md-2">
-			<h4>Base Specification</h4>
-			<div class="btn-group-vertical" data-toggle="buttons" id="specs">
-				<label class="btn btn-primary active">
-					<input type="radio" name="spec" value="spec1"><div class="specname">1</div><div class="specdetails">1 vCPU<br/>2 GiB RAM<br/>100 GiB Disk</div><div class="clearfix"></div>
-				</label>
-				<label class="btn btn-primary">
-					<input type="radio" name="spec" value="spec2"><div class="specname">2</div><div class="specdetails">2 vCPUs<br/>4 GiB RAM<br/>200 GiB Disk</div><div class="clearfix"></div>
-				</label>
-				<label class="btn btn-primary">
-					<input type="radio" name="spec" value="spec3"><div class="specname">3</div><div class="specdetails">4 vCPUs<br/>8 GiB RAM<br/>400 GiB Disk</div><div class="clearfix"></div>
-				</label>
-				<label class="btn btn-primary">
-					<input type="radio" name="spec" value="spec4"><div class="specname">4</div><div class="specdetails">8 vCPUs<br/>16 GiB RAM<br/>800 GiB Disk</div><div class="clearfix"></div>
-				</label>
+		<div class="col-md-12">
+			<h4 style="margin-top:0">1. Enter request details</h4>
+			<div class="form-group col-md-3">
+				<label for="ticket">Ticket:</label><input class="form-control" id="ticket" name="ticket" placeholder="INC0123456" autofocus />
+			</div>
+			<div class="form-group col-md-9">
+				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
+			</div>
+			<div class="form-group col-md-12">
+				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
 			</div>
 		</div>
-		<div class="col-md-2">
-			<h4>Additional vCPUs</h4>
-			<div class="btn-group-vertical blocks" data-toggle="buttons">
-			  <label class="btn btn-primary active">
-				<input type="radio" name="cpu" value="0"> 0
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="1"> 1
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="2"> 2
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="3"> 3
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="4"> 4
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="5"> 5
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="6"> 6
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="7"> 7
-			  </label>
-			  <label class="btn btn-primary">
-				<input type="radio" name="cpu" value="8"> 8
-			  </label>
+	</div>
+
+	<div class="row" style="margin-top: 0.5em">
+		<div class="col-md-12">
+			<h4>2. Choose Base Specification</h4>
+			<div class="btn-group" data-toggle="buttons" id="specs" style="margin-left: 1em">
+				<!-- Populated by JavaScript -->
 			</div>
 		</div>
-		<div class="col-md-2">
-			<h4>Additional RAM (GiB)</h4>
-			<div class="btn-group-vertical blocks" data-toggle="buttons">
-				<label class="btn btn-success active">
-					<input type="radio" name="ram" value="0"> 0
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="2"> 2
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="4"> 4
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="6"> 6
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="8"> 8
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="10"> 10
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="12"> 12
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="14"> 14
-				</label>
-				<label class="btn btn-success">
-					<input type="radio" name="ram" value="16"> 16
-				</label>
+	</div>
+
+	<div class="row" style="margin-top: 1.6em">
+		<div class="col-md-12">
+			<h4>3. Customise Specification</h4>
+			<div style="height:2.2em"></div>{#- Padding for tooltip #}
+			<div class="form-group col-md-4">
+				<label for="cpus" style="margin-right: 15px;position:relative;top:1px">CPUs:</label>
+				<input style="width:70%" name="cpus" id="cpus" data-slider-id="slider-cpus" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
+			</div>
+			<div class="form-group col-md-4">
+				<label for="ram" style="margin-right: 15px;position:relative;top:1px">RAM (GB):</label>
+				<input style="width:70%" name="ram" id="ram" data-slider-id="slider-ram" type="text" data-slider-min="2" data-slider-max="32" data-slider-step="2" data-slider-value="2" />
+			</div>
+			<div class="form-group col-md-4">
+				<label for="disk" style="margin-right: 15px;position:relative;top:1px">Disk (GB):</label>
+				<input style="width:70%" name="disk" id="disk" data-slider-id="slider-disk" type="text" data-slider-min="2" data-slider-max="2000" data-slider-step="100" data-slider-value="100" />
 			</div>
 		</div>
-		<div class="col-md-2">
-			<h4>Additional Disk (GiB)</h4>
-			<div class="btn-group-vertical blocks" data-toggle="buttons">
-				<label class="btn btn-warning active">
-					<input type="radio" name="disk" value="0"> 0
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="100"> 100
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="200"> 200
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="300"> 300
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="400"> 400
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="500"> 500
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="600"> 600
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="700"> 700
-				</label>
-				<label class="btn btn-warning">
-					<input type="radio" name="disk" value="800"> 800
-				</label>
-			</div>
-		</div>
-		<div class="col-md-2">
-			<h4>Image</h4>
-			<div class="btn-group btn-group-vertical" data-toggle="buttons">
-				<label class="btn btn-default btnl">
-					<input type="radio" name="template" value="rhel6"> RHEL 6
-				</label>
-				<label class="btn btn-default btnl">
-					<input type="radio" name="template" value="rhel7"> RHEL 7
-				</label>
-				<label class="btn btn-default btnl">
-					<input type="radio" name="template" value="windows_server_2008"> Windows Server 2008
-				</label>
-				<label class="btn btn-default btnl">
-					<input type="radio" name="template" value="windows_server_2012"> Windows Server 2012
-				</label>
-			</div>
-			<h4 style="margin-top:1em">Environment</h4>
-			<div class="btn-group btn-group-vertical" data-toggle="buttons">
-{% for environment in environments -%}
-				<label class="btn btn-default">
-					<input type="radio" name="environment" value="{{ environment.id }}" />{{ environment.name }}
-				</label>
-{%- endfor %}
-			</div>
-			<h4 style="margin-top:1em">Location</h4>
-			<div class="btn-group btn-group-vertical" data-toggle="buttons">
-{% for cluster in clusters -%}
-				<label class="btn btn-default">
-					<input type="radio" name="cluster" value="{{ cluster.name }}"> {{cluster.name}}
-				</label>
-{%- endfor %}
+	</div>
+
+	<div class="row" style="margin-top: 1.0em">
+		<div class="col-md-4">
+			<h4>4. Choose Image</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="template" id="template">
+					<option></option>
+					<option value="rhel6">RHEL 6</option>
+					<option value="rhel7">RHEL 7</option>
+					<option value="windows_server_2008">Windows Server 2008 R2</option>
+					<option value="windows_server_2012">Windows Server 2012 R2</option>
+				</select>
 			</div>
 
-		</div>
-		<div class="col-md-2">
-			<h4><strong>Totals</strong></h4>
-			<div style="font-size: 120%">
-				<div><strong>vCPUs:</strong> <span id="val_vcpus">0</span></div>
-				<div><strong>RAM:</strong> <span id="val_ram">0</span> GiB</div>
-				<div><strong>Disk:</strong> <span id="val_disk">0</span> GiB</div>
-				<div><strong>Cost:</strong> £<span id="val_cost">0</span>/year</div>
+			<h4 style="margin-top:2.2em">5. Choose Environment</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="environment" id="environment">
+					<option></option>
+{% for environment in environments -%}
+					<option value="{{ environment.id }}">{{ environment.name }}</option>
+{%- endfor %}
+				</select>
 			</div>
-	
+
+			<h4 style="margin-top:2.2em">6. Choose Location Cluster</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="cluster" id="cluster">
+					<option></option>
+{% for cluster in clusters -%}
+					<option value="{{ cluster.name }}">{{cluster.name}}</option>
+{%- endfor %}
+				<select>
+			</div>
+		</div>
+
+		<div class="col-md-4">
+			<h4>7. Summary</h4>
+			<div style="margin-left: 1em">
+				<p>A VM will be created with the following specifications. The calculated cost is also shown below.</p>
+				<div style="font-size: 120%">
+					<div><strong>vCPUs:</strong> <span id="val_vcpus">0</span></div>
+					<div><strong>RAM:</strong> <span id="val_ram">0</span> GiB</div>
+					<div><strong>Disk:</strong> <span id="val_disk">0</span> GiB</div>
+					<div style="margin-top:0.5em"><strong>Cost:</strong> £<span id="val_cost">0</span>/year</div>
+					<div style="margin-left:0.8em;font-size:85%">
+						<div><strong>&bull; Base:</strong> £<span id="base_cost">0</span>/year</div>
+						<div><strong>&bull; Add. CPUs:</strong> £<span id="cpu_cost">0</span>/year</div>
+						<div><strong>&bull; Add. RAM:</strong> £<span id="ram_cost">0</span>/year</div>
+						<div><strong>&bull; Add. Disk:</strong> £<span id="disk_cost">0</span>/year</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<h4>8. Create</h4>
 			<div class="submit">
-				<button type="submit" class="btn btn-primary btn-submit" id="create"><i class="fa fa-fw fa-plus"></i> Create</button>
+				<button type="submit" class="btn btn-success btn-submit" id="create"><i class="fa fa-fw fa-plus"></i> Create</button>
 			</div>
 		</div>
 	</div>
@@ -267,57 +214,52 @@ var cost_per_gb_disk = 0.3;
 
 function updateTotals()
 {
-	// Initialise variables
-	var vcpus = 0;
-	var ram = 0;
-	var disk = 0;
-	var cost = 0;
-	
 	// See what specification is selected
 	var spec = $('label.active input[name=spec]')
 	if (spec.length != 0)
 	{
 		// Extract information from specs
 		var spec = specs[$(spec[0]).val()];
-		vcpus = spec['vcpus'];
-		ram = spec['ram'];
-		disk = spec['disk'];
-		cost = spec['cost'];
+		var spec_cpus = spec['vcpus'];
+		var spec_ram = spec['ram'];
+		var spec_disk = spec['disk'];
+		var spec_cost = spec['cost'];
 
-		// Put on the additional CPUs
-		var add_vcpus = $('label.active input[name=cpu]');
-		if (add_vcpus.length != 0)
-		{
-			vcpus = vcpus + parseInt($(add_vcpus[0]).val());
-			cost  = cost  + parseInt($(add_vcpus[0]).val()) * cost_per_vcpu;
-		}
+		// Set minimums on sliders (resets slider values to their minimum)
+		setSliderMinimum('#cpus', spec_cpus);
+		setSliderMinimum('#ram', spec_ram);
+		setSliderMinimum('#disk', spec_disk);
 
-		// Put on the additional RAM
-		var add_ram = $('label.active input[name=ram]');
-		if (add_ram.length != 0)
-		{
-			ram  = ram  + parseInt($(add_ram[0]).val());
-			cost = cost + parseInt($(add_ram[0]).val()) * cost_per_gb_ram;
-		}
+		// Extract customisations
+		var cust_cpus = $('#cpus').slider('getValue');
+		var cust_ram = $('#ram').slider('getValue');
+		var cust_disk = $('#disk').slider('getValue');
 
-		// Put on the additional disk
-		var add_disk = $('label.active input[name=disk]');
-		if (add_disk.length != 0)
-		{
-			disk = disk + parseInt($(add_disk[0]).val());
-			cost = cost + parseInt($(add_disk[0]).val()) * cost_per_gb_disk;
-		}
+		// Calculate VM cost (spec base cost plus additional CPU/RAM/Disk costs)
+		var cpu_cost = ((cust_cpus - spec_cpus) * cost_per_vcpu);
+		var ram_cost = ((cust_ram - spec_ram) * cost_per_gb_ram);
+		var disk_cost = ((cust_disk - spec_disk) * cost_per_gb_disk);
+		var total_cost = spec_cost + cpu_cost + ram_cost + disk_cost;
 
 		// Update display
-		$('#val_vcpus').text(vcpus);
-		$('#val_ram').text(ram);
-		$('#val_disk').text(disk);
-		$('#val_cost').text(cost);
+		$('#val_vcpus').text(cust_cpus);
+		$('#val_ram').text(cust_ram);
+		$('#val_disk').text(cust_disk);
+		$('#val_cost').text(total_cost);
+		$('#base_cost').text(spec_cost);
+		$('#cpu_cost').text(cpu_cost);
+		$('#ram_cost').text(ram_cost);
+		$('#disk_cost').text(disk_cost);
+	}
+}
 
-		// Update form
-		$('#total_cpus').val(vcpus);
-		$('#total_ram').val(ram);
-		$('#total_disk').val(disk);
+// Helper function
+function setSliderMinimum(selector, minimum)
+{
+	if ($(selector).slider('getAttribute', 'min') != minimum)
+	{
+		$(selector).slider('setAttribute', 'min', minimum);
+		$(selector).slider('refresh');
 	}
 }
 
@@ -331,37 +273,55 @@ $(document).ready(function()
 	for (idx in specs_order)
 	{
 		spec = specs_order[idx];
-		html = html + '<label class="btn btn-primary' + (first ? ' active' : '') + '"><input type="radio" name="spec" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + specs[spec].vcpus + ' vCPU<br/>' + specs[spec].ram + ' GiB RAM<br/>' + specs[spec].disk + ' GiB Disk</div><div class="clearfix"></div></label>';
+		html = html + '<label class="btn btn-primary' + (first ? ' active' : '') + '"><input type="radio" name="spec" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + specs[spec].vcpus + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
 		$('#specs').html(html);
 
 		if (first) { first = false; }
 	}
 
+	// Setup sliders
+	$('#cpus').slider({tooltip: 'always'});
+	$('#ram').slider({tooltip: 'always'});
+	$('#disk').slider({tooltip: 'always'});
+
 	// Update the totals when the inputs change
 	$('input').change(function() { updateTotals(); });
 	
+	// Perform initial update of values
 	updateTotals();
 });
 
+// Callback for clicking Create button
 $('#create').click(function(e) {
-	if ($("label.active input[name='template']").length == 0)
+	// Validate
+	if ($("#ticket").val().length == 0)
+	{
+		alert('You must enter a ticket number');
+		$('#ticket').focus();
+	}
+	else if ($('#purpose').val().length == 0)
+	{
+		alert('You must enter a purpose for the VM');
+		$('#purpose').focus();
+	}
+	else if ($("#template").val() == "")
 	{
 		alert('You must select a VM image to use');
 	}
-	else if ($("label.active input[name='environment']").length == 0)
+	else if ($("#environment").val() == "")
 	{
 		alert('You must select an environment');
 	}
-	else if ($("label.active input[name='cluster']").length == 0)
+	else if ($("#cluster").val() == "")
 	{
 		alert('You must select a location');
 	}
 	else
 	{
 		// Temporary as this workflow is not operational
-		e.preventDefault();
-		return false;
-		//return true;
+		/*e.preventDefault();
+		return false;*/
+		return true;
 	}
 
 	// We've hit an error condition, don't allow the form to submit

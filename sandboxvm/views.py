@@ -68,7 +68,7 @@ def sandboxvm_create():
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.core.neocortex_connect()
-		task_id = neocortex.create_task(__name__, session['username'], options)
+		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates a virtual machine on the sandbox environment")
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))

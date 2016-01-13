@@ -3,10 +3,10 @@ import time
 
 def run(helper, options):
 	domain = "soton.ac.uk"
-	network = "192.168.168.0/22"
+	network = "192.168.63.0/25"
 
-	helper.event("allocate_name", "Allocating a 'srv' system name")
-	system_info = helper.lib.allocate_name('srv', 'Automatic VM', helper.username)
+	helper.event("allocate_name", "Allocating a 'play' system name")
+	system_info = helper.lib.allocate_name('play', options['purpose'], helper.username)
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info.keys()[0]
 	system_dbid = system_info.values()[0]
@@ -25,7 +25,7 @@ def run(helper, options):
 	if options['template'] == 'rhel6':
 		template_name = 'autotest_rhel6template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
-		os_name = 'Red Hat Enterprise Linux 6'
+		os_name = 'Red Hat Enterprise Linux  6'
 		os_disk_size = 50
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway='192.168.63.126', netmask='255.255.255.128', ipaddr=ipv4addr, dns_servers=['152.78.110.110', '152.78.111.81', '152.78.111.113'], dns_domain='soton.ac.uk', os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
 	elif options['template'] == 'windows_server_2012':
@@ -36,10 +36,10 @@ def run(helper, options):
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway='192.168.63.126', netmask='255.255.255.128', ipaddr=ipv4addr, dns_servers=['152.78.110.110', '152.78.111.81', '152.78.111.113'], dns_domain='soton.ac.uk', os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname='University of Southampton', orgname='University of Southampton')
 
 	## Connect to vCenter
-	si = helper.lib.vmware_smartconnect('srv00080')
+	si = helper.lib.vmware_smartconnect('srv01197')
 
 	## Launch the task to clone the virtual machine
-	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", custspec=vm_spec)
+	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec)
 	helper.lib.vmware_task_complete(task, "Failed to create the virtual machine")
 	helper.end_event(description="Created the virtual machine successfully")
 
@@ -54,8 +54,8 @@ def run(helper, options):
 		# Get total CPUs
 		total_cpu = int(options['cpu'])
 
-		# Choose how many cores per CPU (we disallow some configurations)
-		core_cpu_map = [1, 2, 3, 2, 1, 3, None, 4, 3, 2, None, 4, None, None, None, 4]
+		# Choose how many cores per CPU (we disallow some configurations). TODO: Fix this
+		core_cpu_map = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, None, 4]
 		cpus_per_core = core_cpu_map[total_cpu]
 		if cpus_per_core is None:
 			raise Exception('Invalid number of vCPUs')
@@ -89,8 +89,11 @@ def run(helper, options):
 		# Update VMware cache item (so we don't have to wait for the next run 
 		# of the scheduled VMware import)
 		helper.event("update_cache", "Updating Cortex VM cache item")
-		helper.lib.update_vm_cache(vm, 'srv00080')
-		helper.end_event("Updated Cortex VM cache item")
+		try:
+			helper.lib.update_vm_cache(vm, 'srv00080')
+			helper.end_event("Updated Cortex VM cache item")
+		except Exception as e:
+			helper.end_event(success=False, "Failed to update Cortex VM cache item - VMware information may be incorrect")
 
 		# Automatically register Linux VMs with the built in Puppet ENC
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
@@ -102,7 +105,7 @@ def run(helper, options):
 		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
 		try:
 			# Create the entry in ServiceNow
-			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']), environment=options['env'])
+			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']), environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='Astro House', ipaddr=ipv4addr)
 			# Update Cortex systems table row with the sys_id
 			helper.lib.set_link_ids(system_dbid, sys_id)
 			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
