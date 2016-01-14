@@ -90,7 +90,7 @@ def run(helper, options):
 		# Automatically register Linux VMs with the built in Puppet ENC
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
 			helper.event("puppet_enc_register", "Registering with Puppet ENC")
-			helper.lib.puppet_enc_register(system_dbid, system_name + ".soton.ac.uk", "production")
+			helper.lib.puppet_enc_register(system_dbid, system_name + ".soton.ac.uk", options['env'])
 			helper.end_event("Registered with Puppet ENC")
 
 		# Create the ServiceNow CMDB CI

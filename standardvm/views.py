@@ -31,7 +31,7 @@ def standardvm_create():
 		template = request.form['template']
 		cluster  = request.form['cluster']
 		env      = request.form['environment']
-		ticket   = request.form['ticket']
+		task     = request.form['task']
 		purpose  = request.form['purpose']
 		comments = request.form['comments']
 
@@ -43,7 +43,7 @@ def standardvm_create():
 		options['template'] = template
 		options['cluster'] = cluster
 		options['env'] = env
-		options['ticket'] = ticket
+		options['task'] = task
 		options['purpose'] = purpose
 		options['comments'] = comments
 

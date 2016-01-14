@@ -87,22 +87,23 @@ def run(helper, options):
 		helper.end_event(description="VM powered up")	
 
 		# Update VMware cache item (so we don't have to wait for the next run 
-		# of the scheduled VMware import)
+		# of the scheduled VMware import). (faulure does not kill task)
 		helper.event("update_cache", "Updating Cortex VM cache item")
 		try:
-			helper.lib.update_vm_cache(vm, 'srv00080')
+			helper.lib.update_vm_cache(vm, 'srv01197')
 			helper.end_event("Updated Cortex VM cache item")
 		except Exception as e:
-			helper.end_event(success=False, "Failed to update Cortex VM cache item - VMware information may be incorrect")
+			helper.end_event(success=False, description="Failed to update Cortex VM cache item - VMware information may be incorrect")
 
 		# Automatically register Linux VMs with the built in Puppet ENC
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
 			helper.event("puppet_enc_register", "Registering with Puppet ENC")
-			helper.lib.puppet_enc_register(system_dbid, system_name + ".soton.ac.uk", "production")
+			helper.lib.puppet_enc_register(system_dbid, system_name + ".soton.ac.uk", options['env'])
 			helper.end_event("Registered with Puppet ENC")
 
-		# Create the ServiceNow CMDB CI
+		# Create the ServiceNow CMDB CI (failure does not kill task)
 		helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
+		sys_id = None
 		try:
 			# Create the entry in ServiceNow
 			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']), environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='Astro House', ipaddr=ipv4addr)
@@ -111,5 +112,13 @@ def run(helper, options):
 			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
 		except Exception as e:
 			helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
-			raise(e)
 	
+		# If we succeeded in creating a CI, try linking the task (failure does not kill task)
+		if sys_id is not None and options['task'] is not None and len(options['task'].strip()) != 0:
+			helper.event("sn_link_task_ci", "Linking ServiceNow Task to CI")
+			try:
+				link_sys_id = helper.lib.servicenow_link_task_to_ci(sys_id, options['task'].strip())
+				helper.end_event(success=True, description="Linked ServiceNow Task to CI")
+			except Exception as e:
+				helper.end_event(success=False, description="Failed to link ServiceNow Task to CI. " + str(e))
+			
