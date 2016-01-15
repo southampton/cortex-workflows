@@ -78,6 +78,14 @@ def run(helper, options):
 			helper.lib.vmware_task_complete(task, "Could not add data disk to VM")
 			helper.end_event(description="Data disk added to VM")
 
+		# Set the annotation note on the VM (failure does not kill task)
+		try:
+			helper.event("vm_config_notes", "Setting VM notes annotation")
+			task = helper.lib.vmware_vmreconfig_notes(vm, options['purpose'])
+			helper.lib.vmware_task_complete(task, "VM notes annotation set")
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to set VM notes annotation: " + str(e))
+
 		# Power on the VM
 		helper.event("vm_poweron", "Powering the VM on for the first time")
 		task = helper.lib.vmware_vm_poweron(vm)
