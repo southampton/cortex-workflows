@@ -85,7 +85,7 @@ def run(helper, options):
 			helper.lib.update_vm_cache(vm, 'srv01197')
 			helper.end_event("Updated Cortex VM cache item")
 		except Exception as e:
-			helper.end_event(success=False, "Failed to update Cortex VM cache item - VMware information may be incorrect")
+			helper.end_event(success=False, description="Failed to update Cortex VM cache item - VMware information may be incorrect")
 
 		# Automatically register Linux VMs with the built in Puppet ENC
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
@@ -99,7 +99,7 @@ def run(helper, options):
 			# Create the entry in ServiceNow
 			(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']), environment=options['env'], location='B54')
 			# Update Cortex systems table row with the sys_id
-			helper.lib.set_link_ids(system_dbid, sys_id)
+			helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
 			helper.end_event(success=True, description="Created ServiceNow CMDB CI")
 		except Exception as e:
 			helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
