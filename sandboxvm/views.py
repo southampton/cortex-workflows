@@ -5,7 +5,7 @@ import cortex.core
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
-@app.workflow_handler(__name__, 'Sandbox VM', methods=['GET', 'POST'])
+@app.workflow_handler(__name__, 'Create Sandbox VM', methods=['GET', 'POST'])
 @cortex.core.login_required
 def sandboxvm_create():
 	# Define what CPU, RAM and Disk specs we can have

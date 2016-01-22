@@ -4,13 +4,13 @@ from cortex import app
 import cortex.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
-@app.workflow_handler(__name__, 'Standard VM', methods=['GET','POST'])
+@app.workflow_handler(__name__, 'Create Standard VM', methods=['GET','POST'])
 @cortex.core.login_required
 def standardvm_create():
 
 	if request.method == 'GET':
 		# Get the list of clusters
-		clusters = cortex.core.vmware_list_clusters("srv01197")
+		clusters = cortex.core.vmware_list_clusters("srv00080")
 
 		# Get the list of environments
 		environments = cortex.core.get_cmdb_environments()
