@@ -12,16 +12,23 @@ def run(helper, options):
 	helper.event("vm_clone", "Creating the virtual machine using VMware API")
 
 	## Create the virtual machine post-clone specification
-	if options['template'] == 'linux':
+	if options['template'] == 'rhel6':
 		template_name = 'autotest_rhel6template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		os_name = 'Red Hat Enterprise Linux  6' # Don't delete the second space for now, ServiceNow currently needs it :(
-		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type = os_type, os_domain = 'soton.ac.uk', timezone = 'Europe/London')
-	else:
+		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
+	elif options['template'] == 'rhel7':
+		template_name = 'RHEL7-Template'
+		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
+		os_name = 'Red Hat Enterprise Linux 7'
+		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
+	elif options['template'] == 'windows':
 		template_name = '2012R2_Template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 		os_name = 'Windows Server 2012'
-		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type = os_type, os_domain = 'devdomain.soton.ac.uk', timezone = 85, domain_join_user= helper.config['AD_DEV_JOIN_USER'], domain_join_pass = helper.config['AD_DEV_JOIN_PASS'], fullname = 'University of Southampton', orgname = 'University of Southampton')
+		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname='University of Southampton', orgname='University of Southampton')
+	else:
+		raise RuntimeError("Unknown template specified")
 
 	## Connect to vCenter
 	si = helper.lib.vmware_smartconnect('srv01197')

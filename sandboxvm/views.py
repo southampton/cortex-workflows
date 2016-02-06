@@ -21,7 +21,7 @@ def sandboxvm_create():
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", cpu_list=cpu_list, mem_list=mem_list, disk_list=disk_list, clusters=clusters, environments=environments)
+		return render_template(__name__ + "::create.html", cpu_list=cpu_list, mem_list=mem_list, disk_list=disk_list, clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require

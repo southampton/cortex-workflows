@@ -16,7 +16,7 @@ def standardvm_create():
 		environments = cortex.core.get_cmdb_environments()
 
 		## Show form
-		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments)
+		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
