@@ -77,13 +77,32 @@ def run(helper, options):
 			helper.lib.vmware_task_complete(task, "Could not add data disk to VM")
 			helper.end_event(description="Data disk added to VM")
 
-		# Power on the VM
+		# Mark the VM as not having any customisations applied, and then power on the VM
 		helper.event("vm_poweron", "Powering the VM on for the first time")
+		helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "notstarted")
 		task = helper.lib.vmware_vm_poweron(vm)
 		helper.lib.vmware_task_complete(task, "Could not power on the VM")
 		if not helper.lib.vmware_wait_for_poweron(vm, 30):
-			helper.lib.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
+			helper.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
 		helper.end_event(description="VM powered up")	
+
+		# Wait for VMware customisations to start
+		helper.event("vm_custom_start", "Waiting for VMware customisations to start")
+		try:
+			if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=1):
+				# If they start, mark in variable...
+				helper.end_event(description="VMware customisations started")
+				helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "started")
+
+				# ... wait for them to finish
+				helper.event("vm_custom_finish", "Waiting for VMware customisations to finish")
+				if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=2):
+					helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "complete")
+					# If they finish, mark in variable...
+					helper.end_event(description="VMware customisations finished")
+		except Exception, e:
+			# End any open event, regardless of which one it was
+			helper.end_event(success=False, description="Error occured whilst waiting for customisations: " + str(e))
 
 		# Update VMware cache item (so we don't have to wait for the next run 
 		# of the scheduled VMware import). If this fails, it's not a fatal error

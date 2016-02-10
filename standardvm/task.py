@@ -173,7 +173,7 @@ def run(helper, options):
 
 	# If we've not powered on within 30 seconds, fail
 	if not helper.lib.vmware_wait_for_poweron(vm, 30):
-		helper.lib.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
+		helper.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
 
 	# End the event
 	helper.end_event(description="VM powered up")	
