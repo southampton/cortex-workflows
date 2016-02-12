@@ -4,7 +4,7 @@ def run(helper, options):
 
 	# Configuration of task
 	prefix = 'play'
-	vcenter_name = 'srv00080'
+	vcenter_name = 'srv01197'
 	domain = 'soton.ac.uk'
 	puppet_cert_domain = 'soton.ac.uk'
 
@@ -114,7 +114,7 @@ def run(helper, options):
 	# Add disk to the VM
 	if int(options['disk']) > 0:
 		# Start the event
-		helper.event("vm_add_disk", "Adding data disk to the VM")
+		helper.event("vm_add_disk", "Adding disk to the VM")
 
 		# Reconfigure the VM to add the disk
 		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
@@ -160,9 +160,6 @@ def run(helper, options):
 
 	# End the event
 	helper.end_event(description="VM powered up")	
-
-
-
 
 	# Wait for VMware customisations to start
 	#helper.event("vm_custom_start", "Waiting for VMware customisations to start")
