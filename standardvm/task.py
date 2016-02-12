@@ -12,7 +12,7 @@ def run(helper, options):
 	netmask = '255.255.255.128'
 	dns_servers = ['152.78.110.110', '152.78.111.81', '152.78.111.113']
 	dns_domain = 'soton.ac.uk'
-	puppet_cert_domain = "soton.ac.uk"
+	puppet_cert_domain = 'soton.ac.uk'
 
 
 
@@ -68,10 +68,14 @@ def run(helper, options):
 	elif options['template'] == 'windows_server_2012':
 		template_name = '2012R2_Template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
-		os_name = 'Windows Server 2012'
+		os_name = 'Microsoft Windows Server 2012'
 		os_disk_size = 50
 
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname='University of Southampton', orgname='University of Southampton')
+
+	# Anything else
+	else:
+		raise RuntimeError("Unknown template specified")
 
 	# Connect to vCenter
 	si = helper.lib.vmware_smartconnect(vcenter_name)
@@ -98,13 +102,10 @@ def run(helper, options):
 	helper.event("vm_reconfig_cpu", "Setting VM CPU configuration")
 
 	# Get total CPUs desired from our options
-	total_cpu = int(options['cpu'])
+	total_cpu = int(options['sockets']) * int(options['cores'])
 
-	# Choose how many cores per CPU (we disallow some configurations). TODO: Fix this
-	core_cpu_map = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, None, 4]
-	cpus_per_core = core_cpu_map[total_cpu]
-	if cpus_per_core is None:
-		raise Exception('Invalid number of vCPUs')
+	# Get number of cores per socket
+	cpus_per_core = int(options['cores'])
 	
 	# Reconfigure the VM
 	task = helper.lib.vmware_vmreconfig_cpu(vm, total_cpu, cpus_per_core)
@@ -188,7 +189,7 @@ def run(helper, options):
 	# Start the event
 	helper.event("update_cache", "Updating Cortex VM cache item")
 
-	# Failure of this does not kill the task.
+	# Failure of this does not kill the task
 	try:
 		# Update the cache item
 		helper.lib.update_vm_cache(vm, vcenter_name)
@@ -197,6 +198,21 @@ def run(helper, options):
 		helper.end_event("Updated Cortex VM cache item")
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to update Cortex VM cache item - VMware information may be incorrect")
+
+
+
+	## Register Linux VMs with the built in Puppet ENC #####################
+
+	# Only for Linux VMs...
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+		# Start the event
+		helper.event("puppet_enc_register", "Registering with Puppet ENC")
+
+		# Register with the Puppet ENC
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+
+		# End the event
+		helper.end_event("Registered with Puppet ENC")
 
 
 
@@ -237,19 +253,3 @@ def run(helper, options):
 			helper.end_event(success=True, description="Linked ServiceNow Task to CI")
 		except Exception as e:
 			helper.end_event(success=False, description="Failed to link ServiceNow Task to CI. " + str(e))
-		
-
-
-	## Automatically register Linux VMs with the built in Puppet ENC #######
-
-	# Only for Linux VMs...
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
-		# Start the event
-		helper.event("puppet_enc_register", "Registering with Puppet ENC")
-
-		# Register with the Puppet ENC
-		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
-
-		# End the event
-		helper.end_event("Registered with Puppet ENC")
-
