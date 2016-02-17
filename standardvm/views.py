@@ -1,19 +1,19 @@
 #!/usr/bin/python
 
 from cortex import app
-import cortex.core
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
 @app.workflow_handler(__name__, 'Create Standard VM', methods=['GET','POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def standardvm_create():
 
 	if request.method == 'GET':
 		# Get the list of clusters
-		clusters = cortex.core.vmware_list_clusters("srv00080")
+		clusters = cortex.lib.core.vmware_list_clusters("srv00080")
 
 		# Get the list of environments
-		environments = cortex.core.get_cmdb_environments()
+		environments = cortex.lib.core.get_cmdb_environments()
 
 		## Show form
 		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Standard Virtual Machine")
@@ -48,11 +48,9 @@ def standardvm_create():
 		options['comments'] = comments
 
 		# Connect to NeoCortex and start the task
-		neocortex = cortex.core.neocortex_connect()
+		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates a virtual machine in the production VMware environment")
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
 
-	
-#config = app.wfsettings[__name__]

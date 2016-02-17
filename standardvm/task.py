@@ -168,6 +168,10 @@ def run(helper, options):
 	# Start the event
 	helper.event("vm_poweron", "Powering the VM on for the first time")
 
+	# Set up the necessary values in redis
+	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
+	helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
+
 	# Power on the VM
 	task = helper.lib.vmware_vm_poweron(vm)
 	helper.lib.vmware_task_complete(task, "Could not power on the VM")

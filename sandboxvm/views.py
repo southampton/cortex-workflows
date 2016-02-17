@@ -1,22 +1,22 @@
 #!/usr/bin/python
 
 from cortex import app
-import cortex.core
+import cortex.lib.core
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
 @app.workflow_handler(__name__, 'Create Sandbox VM', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def sandboxvm_create():
 	# Get the list of clusters
-	clusters = cortex.core.vmware_list_clusters("srv01197")
+	clusters = cortex.lib.core.vmware_list_clusters("srv01197")
 
 	# Get the list of environments
-	environments = cortex.core.get_cmdb_environments()
+	environments = cortex.lib.core.get_cmdb_environments()
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine")
+		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE')
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -56,7 +56,7 @@ def sandboxvm_create():
 		options['comments'] = comments
 
 		# Connect to NeoCortex and start the task
-		neocortex = cortex.core.neocortex_connect()
+		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates a virtual machine on the sandbox environment")
 
 		# Redirect to the status page for the task

@@ -44,7 +44,7 @@ def run(helper, options):
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		os_name = 'Red Hat Enterprise Linux 7'
 
-		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
+		vm_spec = None #helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
 
 	# For Server 2012R2
 	elif options['template'] == 'windows_server_2012':
@@ -147,8 +147,12 @@ def run(helper, options):
 	# Start the event
 	helper.event("vm_poweron", "Powering the VM on for the first time")
 
+	# Set up the necessary values in redis
+	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
+	helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
+
 	# Mark the VM as not having any customisations applied, and then power on the VM
-	helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "notstarted"), "Could not set VMware guestinfo variable")
+	#helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "notstarted"), "Could not set VMware guestinfo variable")
 
 	# Power on the VM
 	task = helper.lib.vmware_vm_poweron(vm)
@@ -163,21 +167,21 @@ def run(helper, options):
 
 	# Wait for VMware customisations to start
 	#helper.event("vm_custom_start", "Waiting for VMware customisations to start")
-	try:
+	#try:
 	#	if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=1):
 	#		# If they start, mark in variable...
 	#		helper.end_event(description="VMware customisations started")
 	#		helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "started"), "Could not set VMware guestinfo variable")
-
-		# ... wait for them to finish
-		helper.event("vm_custom_finish", "Waiting for VMware customisations to finish")
-		if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=2):
-			# If they finish, mark in variable...
-			helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "complete"), "Could not set VMware guestinfo variable")
-			helper.end_event(description="VMware customisations finished")
-	except Exception, e:
-		# End any open event, regardless of which one it was
-		helper.end_event(success=False, description="Error occured whilst waiting for customisations: " + str(e))
+	#
+	#	# ... wait for them to finish
+	#	helper.event("vm_custom_finish", "Waiting for VMware customisations to finish")
+	#	if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=2):
+	#		# If they finish, mark in variable...
+	#		helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "complete"), "Could not set VMware guestinfo variable")
+	#		helper.end_event(description="VMware customisations finished")
+	#except Exception, e:
+	#	# End any open event, regardless of which one it was
+	#	helper.end_event(success=False, description="Error occured whilst waiting for customisations: " + str(e))
 
 
 
@@ -234,3 +238,33 @@ def run(helper, options):
 		helper.end_event(success=True, description="Created ServiceNow CMDB CI")
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
+
+	## Wait for the VM to finish building ##################################
+
+	# Start the event
+	helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
+
+	# Wait for the in-guest installer to set the state to 'progress' or 'done'
+	wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
+
+	# When it returns, end the event
+	if wait_response is None or wait_response not in ['inprogress', 'done']:
+		helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
+
+		# End the task here
+		return
+	else:
+		helper.end_event(success=True, description='In-guest installation started')
+
+	# Start another event
+	helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
+
+	# Wait for the in-guest installer to set the state to 'progress' or 'done'
+	wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
+
+	# When it returns, end the event
+	if wait_response is None or wait_response not in ['done']:
+		helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
+	else:
+		helper.end_event(success=True, description='In-guest installation finished')
+

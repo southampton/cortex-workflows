@@ -62,7 +62,7 @@ div.specdetails
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter request details</h4>
 			<div class="form-group col-md-12">
-				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
+				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
 			</div>
 			<div class="form-group col-md-12">
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
@@ -119,7 +119,7 @@ div.specdetails
 				<select class="selectpicker" name="environment" id="environment">
 					<option></option>
 {% for environment in environments -%}
-					<option value="{{ environment.id }}">{{ environment.name }}</option>
+					<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
 {%- endfor %}
 				</select>
 			</div>
@@ -129,7 +129,7 @@ div.specdetails
 				<select class="selectpicker" name="cluster" id="cluster">
 					<option></option>
 {% for cluster in clusters -%}
-					<option value="{{ cluster.name }}">{{cluster.name}}</option>
+					<option value="{{ cluster.name }}"{% if default_cluster == cluster.name %} selected="selected"{% endif %}>{{cluster.name}}</option>
 {%- endfor %}
 				</select>
 			</div>
