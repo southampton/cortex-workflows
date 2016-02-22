@@ -234,6 +234,7 @@ def run(helper, options):
 	# Start the event
 	helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
 	sys_id = None
+	cmdb_id = None
 
 	# Failure does not kill the task
 	try:
@@ -319,6 +320,10 @@ def run(helper, options):
 		message = message + '\n'
 		message = message + 'The event log for the task can be found at https://cortex.dev.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
 		message = message + 'More information about the VM, can be found on the Cortex systems page at https://cortex.dev.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
+		if sys_id is not None:
+			message = message + 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
+		else:
+			message = message + 'A ServiceNow CI was not created. For more information, see the task event log.'
 
 		# Send the message to the user who started the task
-		helper.lib.send_email(helper.username, 'Cortex has finished building your VM', message)
+		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + system_name, message)

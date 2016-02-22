@@ -5,7 +5,7 @@ import cortex.lib.core
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
-@app.workflow_handler(__name__, 'Create Sandbox VM', methods=['GET', 'POST'])
+@app.workflow_handler(__name__, 'Create Sandbox VM', 20, methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def sandboxvm_create():
 	# Get the list of clusters

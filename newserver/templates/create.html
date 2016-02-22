@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+{% endblock %}
+{% block body %}
+
+<div class="page-header">
+<h3>Allocate server</h3>
+<p class="text-muted">This workflow will allocate a hostname, allocate an IP address by creating a Host object in Infoblox, and create a ServiceNow CI for the newly created server.</p>
+</div>
+
+<style type="text/css">
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+</style>
+
+<form method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+
+	<div class="row">
+		<div class="col-md-12">
+			<h4 style="margin-top:0">1. Enter details</h4>
+			<div class="form-group col-md-12">
+				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
+			</div>
+			<div class="form-group col-md-12">
+				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row" style="margin-top: 1.0em">
+		<div class="col-md-4">
+			<h4>2. Choose Class</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="class" id="class">
+					<option></option>
+{%- for class in classes %}
+					<option value="{{ class.name }}"{% if default_class == class.name %} selected="selected"{% endif %}>{{ class.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<h4>3. Choose Operating System</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="os" id="os">
+					<option></option>
+{%- for os in oses %}
+					<option value="{{ os.id }}">{{ os.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<h4>4. Choose Environment</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="environment" id="environment">
+					<option></option>
+{%- for environment in environments %}
+					<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+	</div>
+	<div class="row" style="margin-top: 1.0em">
+		<div class="col-md-4">
+			<h4>5. Choose Network</h4>
+			<div style="margin-left:1em">
+				<div style="margin:0 0 0.3em 0">
+					<input type="checkbox" checked="checked" name="alloc_ip" id="alloc_ip" style="margin-right:0.4em" /><label for="alloc_ip" style="position:relative;top:-2px">Allocate an IP and DNS entry</label>
+				</div>
+				<select class="selectpicker" name="network" id="network">
+					<option></option>
+{%- for network in networks %}
+					<option value="{{ network.id }}">{{ network.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+
+		</div>
+		<div class="col-md-4">
+			<h4>6. Options</h4>
+			<div style="margin-left:1em">
+				<div style="margin:0 0 0.3em 0">
+					<input type="checkbox" checked="checked" name="is_virtual" id="is_virtual" style="margin-right:0.4em" /><label for="is_virtual" style="position:relative;top:-2px">Device is a virtual machine</label>
+				</div>
+			</div>	
+		</div>
+		<div class="col-md-4">
+			<h4>7. Allocate</h4>
+			<div class="submit">
+				<button type="submit" class="btn btn-success btn-submit" id="allocate"><i class="fa fa-fw fa-plus"></i> Allocate</button>
+			</div>
+		</div>
+	</div>
+</form>
+{% endblock %}

@@ -4,7 +4,7 @@ from cortex import app
 import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
-@app.workflow_handler(__name__, 'Create Standard VM', methods=['GET','POST'])
+@app.workflow_handler(__name__, 'Create Standard VM', 10, methods=['GET','POST'])
 @cortex.lib.user.login_required
 def standardvm_create():
 
