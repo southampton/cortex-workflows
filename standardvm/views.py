@@ -34,6 +34,7 @@ def standardvm_create():
 		task     = request.form['task']
 		purpose  = request.form['purpose']
 		comments = request.form['comments']
+		sendmail = 'send_mail' in request.form
 
 		# Build options to pass to the task
 		options = {}
@@ -46,6 +47,7 @@ def standardvm_create():
 		options['task'] = task
 		options['purpose'] = purpose
 		options['comments'] = comments
+		options['sendmail'] = sendmail
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()

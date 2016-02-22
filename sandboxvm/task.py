@@ -35,6 +35,7 @@ def run(helper, options):
 		template_name = 'autotest_rhel6template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		os_name = 'Red Hat Enterprise Linux  6' # Don't delete the second space for now, ServiceNow currently needs it :(
+		os_disk_size = 50
 
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
 
@@ -43,6 +44,7 @@ def run(helper, options):
 		template_name = 'RHEL7-Template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		os_name = 'Red Hat Enterprise Linux 7'
+		os_disk_size = 50
 
 		vm_spec = None #helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
 
@@ -51,6 +53,7 @@ def run(helper, options):
 		template_name = '2012R2_Template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 		os_name = 'Microsoft Windows Server 2012'
+		os_disk_size = 100
 
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname='University of Southampton', orgname='University of Southampton')
 
@@ -151,9 +154,6 @@ def run(helper, options):
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
 	helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
 
-	# Mark the VM as not having any customisations applied, and then power on the VM
-	#helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "notstarted"), "Could not set VMware guestinfo variable")
-
 	# Power on the VM
 	task = helper.lib.vmware_vm_poweron(vm)
 	helper.lib.vmware_task_complete(task, "Could not power on the VM")
@@ -164,24 +164,6 @@ def run(helper, options):
 
 	# End the event
 	helper.end_event(description="VM powered up")	
-
-	# Wait for VMware customisations to start
-	#helper.event("vm_custom_start", "Waiting for VMware customisations to start")
-	#try:
-	#	if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=1):
-	#		# If they start, mark in variable...
-	#		helper.end_event(description="VMware customisations started")
-	#		helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "started"), "Could not set VMware guestinfo variable")
-	#
-	#	# ... wait for them to finish
-	#	helper.event("vm_custom_finish", "Waiting for VMware customisations to finish")
-	#	if helper.lib.vmware_wait_for_customisations(si, vm, desired_status=2):
-	#		# If they finish, mark in variable...
-	#		helper.lib.vmware_task_complete(helper.lib.vmware_set_guestinfo_variable(vm, "guestinfo.cortex.customisation", "complete"), "Could not set VMware guestinfo variable")
-	#		helper.end_event(description="VMware customisations finished")
-	#except Exception, e:
-	#	# End any open event, regardless of which one it was
-	#	helper.end_event(success=False, description="Error occured whilst waiting for customisations: " + str(e))
 
 
 
@@ -229,7 +211,7 @@ def run(helper, options):
 	# Failure does not kill the task
 	try:
 		# Create the entry in ServiceNow
-		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=50 + int(options['disk']), environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='B54')
+		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']) + os_disk_size, environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='B54')
 
 		# Update Cortex systems table row with the sys_id
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
@@ -239,32 +221,58 @@ def run(helper, options):
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
 
+
+
 	## Wait for the VM to finish building ##################################
 
-	# Start the event
-	helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
+	# Just for Linux for now...
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+		# Start the event
+		helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
 
-	# Wait for the in-guest installer to set the state to 'progress' or 'done'
-	wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
+		# Wait for the in-guest installer to set the state to 'progress' or 'done'
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
 
-	# When it returns, end the event
-	if wait_response is None or wait_response not in ['inprogress', 'done']:
-		helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
+		# When it returns, end the event
+		if wait_response is None or wait_response not in ['inprogress', 'done']:
+			helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
 
-		# End the task here
-		return
-	else:
-		helper.end_event(success=True, description='In-guest installation started')
+			# End the task here
+			return
+		else:
+			helper.end_event(success=True, description='In-guest installation started')
 
-	# Start another event
-	helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
+		# Start another event
+		helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
 
-	# Wait for the in-guest installer to set the state to 'progress' or 'done'
-	wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
+		# Wait for the in-guest installer to set the state to 'progress' or 'done'
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
 
-	# When it returns, end the event
-	if wait_response is None or wait_response not in ['done']:
-		helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
-	else:
-		helper.end_event(success=True, description='In-guest installation finished')
+		# When it returns, end the event
+		if wait_response is None or wait_response not in ['done']:
+			helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
+		else:
+			helper.end_event(success=True, description='In-guest installation finished')
 
+
+
+	## Send success email ##################################################
+
+	if options['sendmail']:
+		# Build the text of the message
+		message =           'Cortex has finished building your VM. The details of the VM can be found below.\n'
+		message = message + '\n'
+		message = message + 'Hostname: ' + system_name + '\n'
+		message = message + 'IP Address: DHCP\n'
+		message = message + 'VMware Cluster: ' + options['cluster'] + '\n'
+		message = message + 'Purpose: ' + options['purpose'] + '\n'
+		message = message + 'Operating System: ' + os_name + '\n'
+		message = message + 'CPUs: ' + str(total_cpu) + '\n'
+		message = message + 'RAM: ' + str(options['ram']) + ' GiB\n'
+		message = message + 'Data Disk: ' + str(options['disk']) + ' GiB\n'
+		message = message + '\n'
+		message = message + 'The event log for the task can be found at https://cortex.dev.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
+		message = message + 'More information about the VM, can be found on the Cortex systems page at https://cortex.dev.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
+
+		# Send the message to the user who started the task
+		helper.lib.send_email(helper.username, 'Cortex has finished building your VM', message)

@@ -9,7 +9,7 @@
 
 <div class="page-header">
 <h3>Create Sandbox Virtual Machine</h3>
-<p class="muted">This workflow will create a VM on the sandbox environment. A hostname will be automatically allocated from the 'play' group, and the VM will be configured to use DHCP. A ServiceNow CI will also be created automatically.</p>
+<p class="text-muted">This workflow will create a VM on the sandbox environment. A hostname will be automatically allocated from the 'play' group, and the VM will be configured to use DHCP. A ServiceNow CI will also be created automatically.</p>
 </div>
 
 <style type="text/css">
@@ -85,18 +85,22 @@ div.specdetails
 			<div class="form-group col-md-3" style="margin-top:2.4em">
 				<label for="sockets" style="margin-right: 15px;position:relative;top:1px">Sockets:</label>
 				<input style="width:65%" name="sockets" id="sockets" data-slider-id="slider-sockets" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
+				<p class="text-muted">Number of CPU sockets</p>
 			</div>
 			<div class="form-group col-md-3" style="margin-top:2.4em">
 				<label for="cores" style="margin-right: 15px;position:relative;top:1px">Cores:</label>
 				<input style="width:65%" name="cores" id="cores" data-slider-id="slider-cores" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
+				<p class="text-muted">Number of cores per socket</p>
 			</div>
 			<div class="form-group col-md-3" style="margin-top:2.4em">
 				<label for="ram" style="margin-right: 15px;position:relative;top:1px">RAM (GB):</label>
 				<input style="width:65%" name="ram" id="ram" data-slider-id="slider-ram" type="text" data-slider-min="2" data-slider-max="32" data-slider-step="2" data-slider-value="2" />
+				<p class="text-muted">Total amount of RAM, including video RAM</p>
 			</div>
 			<div class="form-group col-md-3" style="margin-top:2.4em">
 				<label for="disk" style="margin-right: 15px;position:relative;top:1px">Disk (GB):</label>
 				<input style="width:65%" name="disk" id="disk" data-slider-id="slider-disk" type="text" data-slider-min="2" data-slider-max="2000" data-slider-step="100" data-slider-value="100" />
+				<p class="text-muted">Additional disk size, excluding the default OS disk</p>
 			</div>
 		</div>
 	</div>
@@ -109,7 +113,6 @@ div.specdetails
 					<option></option>
 					<option value="rhel6">RHEL 6</option>
 					<option value="rhel7">RHEL 7</option>
-					<option value="windows_server_2008">Windows Server 2008 R2</option>
 					<option value="windows_server_2012">Windows Server 2012 R2</option>
 				</select>
 			</div>
@@ -148,6 +151,9 @@ div.specdetails
 		</div>
 		<div class="col-md-4">
 			<h4>8. Create</h4>
+			<div style="margin:0 0 0.5em 1.0em">
+				<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em"/><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
+			</div>
 			<div class="submit">
 				<button type="submit" class="btn btn-success btn-submit" id="create"><i class="fa fa-fw fa-plus"></i> Create</button>
 			</div>

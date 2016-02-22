@@ -34,6 +34,7 @@ def sandboxvm_create():
 		env      = request.form['environment']
 		purpose  = request.form['purpose']
 		comments = request.form['comments']
+		sendmail = 'send_mail' in request.form
 
 		# Validate cluster against the list we've got
 		if cluster not in [c['name'] for c in clusters]:
@@ -54,6 +55,7 @@ def sandboxvm_create():
 		options['env'] = env
 		options['purpose'] = purpose
 		options['comments'] = comments
+		options['sendmail'] = sendmail
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()

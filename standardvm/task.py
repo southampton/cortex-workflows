@@ -64,12 +64,21 @@ def run(helper, options):
 
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
 
+	# For RHEL7:
+	elif options['template'] == 'rhel7':
+		template_name = 'RHEL7-Template'
+		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
+		os_name = 'Red Hat Enterprise Linux 7'
+		os_disk_size = 50
+
+		vm_spec = None #helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
+
 	# For Server 2012R2
 	elif options['template'] == 'windows_server_2012':
 		template_name = '2012R2_Template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 		os_name = 'Microsoft Windows Server 2012'
-		os_disk_size = 50
+		os_disk_size = 100
 
 		vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname='University of Southampton', orgname='University of Southampton')
 
@@ -92,7 +101,7 @@ def run(helper, options):
 
 	# If we don't have a VM, then kill the task
 	if vm == None:
-		raise Exception("VM creation failed: VMware API did not return a VM object reference")
+		raise RuntimeError("VM creation failed: VMware API did not return a VM object reference")
 
 
 
@@ -138,7 +147,7 @@ def run(helper, options):
 		helper.event("vm_add_disk", "Adding data disk to the VM")
 
 		# Reconfigure the VM to add the disk
-		task = helper.lib.vmware_vm_add_disk(vm, (int(options['disk']) - os_disk_size) * 1024 * 1024 * 1024)
+		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
 		helper.lib.vmware_task_complete(task, "Could not add data disk to VM")
 
 		# End the event
@@ -229,7 +238,7 @@ def run(helper, options):
 	# Failure does not kill the task
 	try:
 		# Create the entry in ServiceNow
-		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']), environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='Astro House', ipaddr=ipv4addr)
+		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']) + os_disk_size, environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='Astro House', ipaddr=ipv4addr)
 
 		# Update Cortex systems table row with the sys_id
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
@@ -257,3 +266,59 @@ def run(helper, options):
 			helper.end_event(success=True, description="Linked ServiceNow Task to CI")
 		except Exception as e:
 			helper.end_event(success=False, description="Failed to link ServiceNow Task to CI. " + str(e))
+
+
+
+	## Wait for the VM to finish building ##################################
+
+	# Just for Linux for now...
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+		# Start the event
+		helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
+
+		# Wait for the in-guest installer to set the state to 'progress' or 'done'
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
+
+		# When it returns, end the event
+		if wait_response is None or wait_response not in ['inprogress', 'done']:
+			helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
+
+			# End the task here
+			return
+		else:
+			helper.end_event(success=True, description='In-guest installation started')
+
+		# Start another event
+		helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
+
+		# Wait for the in-guest installer to set the state to 'progress' or 'done'
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
+
+		# When it returns, end the event
+		if wait_response is None or wait_response not in ['done']:
+			helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
+		else:
+			helper.end_event(success=True, description='In-guest installation finished')
+
+
+
+	## Send success email ##################################################
+
+	if options['sendmail']:
+		# Build the text of the message
+		message =           'Cortex has finished building your VM. The details of the VM can be found below.\n'
+		message = message + '\n'
+		message = message + 'Hostname: ' + system_name + '\n'
+		message = message + 'IP Address: ' + ipv4addr + '\n'
+		message = message + 'VMware Cluster: ' + options['cluster'] + '\n'
+		message = message + 'Purpose: ' + options['purpose'] + '\n'
+		message = message + 'Operating System: ' + os_name + '\n'
+		message = message + 'CPUs: ' + str(total_cpu) + '\n'
+		message = message + 'RAM: ' + str(options['ram']) + ' GiB\n'
+		message = message + 'Data Disk: ' + str(options['disk']) + ' GiB\n'
+		message = message + '\n'
+		message = message + 'The event log for the task can be found at https://cortex.dev.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
+		message = message + 'More information about the VM, can be found on the Cortex systems page at https://cortex.dev.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
+
+		# Send the message to the user who started the task
+		helper.lib.send_email(helper.username, 'Cortex has finished building your VM', message)
