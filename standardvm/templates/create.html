@@ -306,12 +306,12 @@ $('#create').click(function(e) {
 	if ($("#task").val().length == 0)
 	{
 		alert('You must enter a ServiceNow task number, e.g. INCTASK0123456 or PRJTASK0012345.\nNote that this cannot be an ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
-		$('#ticket').focus();
+		$('#task').focus();
 	}
 	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC))TASK[0-9]+[ \t]*/) == null)
 	{
 		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456 or PRJTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
-		$('#ticket').focus();
+		$('#task').focus();
 	}
 	else if ($('#purpose').val().length == 0)
 	{
@@ -332,7 +332,6 @@ $('#create').click(function(e) {
 	}
 	else
 	{
-		// Temporary as this workflow is not operational
 		return true;
 	}
 

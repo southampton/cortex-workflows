@@ -1,8 +1,6 @@
 #### Allocate server task
 
 def run(helper, options):
-	domain = "soton.ac.uk"
-
 	## Allocate a hostname #################################################
 
 	# Start the task
@@ -27,7 +25,7 @@ def run(helper, options):
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + options['network'])
 	
 		# Allocate an IP address
-		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + domain, options['network'])
+		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + options['domain'], options['network'])
 	
 		# Handle errors - this will stop the task
 		if ipv4addr is None:
@@ -68,3 +66,22 @@ def run(helper, options):
 		helper.end_event(success=True, description="Created ServiceNow CMDB CI")
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
+
+
+
+	## Link ticket to CI ###################################################
+
+	# If we succeeded in creating a CI, try linking the task
+	if sys_id is not None and options['task'] is not None and len(options['task'].strip()) != 0:
+		# Start the event
+		helper.event("sn_link_task_ci", "Linking ServiceNow Task to CI")
+
+		# Failure does not kill the task
+		try:
+			# Link the ServiceNow task to the CI
+			link_sys_id = helper.lib.servicenow_link_task_to_ci(sys_id, options['task'].strip())
+
+			# End the event
+			helper.end_event(success=True, description="Linked ServiceNow Task to CI")
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to link ServiceNow Task to CI. " + str(e))

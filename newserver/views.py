@@ -24,12 +24,15 @@ def allocateserver():
 	# Get the list of operating systems
 	oses = wfconfig['OPERATING_SYSTEMS']
 
+	# Get the list of domains
+	domains = wfconfig['DOMAINS']
+
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", title="Allocate new server", classes=classes, default_class="srv", environments=environments, networks=networks, oses=oses)
+		return render_template(__name__ + "::create.html", title="Allocate new server", classes=classes, default_class=wfconfig['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=wfconfig['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=wfconfig['DEFAULT_DOMAIN'])
 
 	elif request.method == 'POST':
-		if 'purpose' not in request.form or 'comments' not in request.form or 'class' not in request.form or 'os' not in request.form or 'environment' not in request.form or 'network' not in request.form:
+		if 'purpose' not in request.form or 'comments' not in request.form or 'class' not in request.form or 'os' not in request.form or 'environment' not in request.form or 'network' not in request.form or 'domain' not in request.form:
 			flash('You must select options for all questions before allocating', 'alert-danger')
 			return redirect(url_for('allocateserver'))
 
@@ -40,8 +43,14 @@ def allocateserver():
 		network    = request.form['network']
 		purpose    = request.form['purpose']
 		comments   = request.form['comments']
+		domain     = request.form['domain']
 		alloc_ip   = 'alloc_ip' in request.form
 		is_virtual = 'is_virtual' in request.form
+		task       = None
+
+		# Extract task if we've got it
+		if 'task' in request.form and len(request.form['task'].strip()) > 0:
+			task = request.form['task'].strip()
 
 		# Validate class name against the list of classes
 		if classname not in [c['name'] for c in classes]:
@@ -55,9 +64,12 @@ def allocateserver():
 		if env not in [e['id'] for e in environments]:
 			abort(400)
 
-		# Validate network
-		if network not in [n['id'] for n in networks]:
-			abort(400)
+		# Validate networking (if we're allocating an IP)
+		if alloc_ip:
+			if network not in [n['id'] for n in networks]:
+				abort(400)
+			if domain not in domains:
+				abort(400)
 
 		# Populate options
 		options = {}
@@ -67,11 +79,17 @@ def allocateserver():
 		options['comments'] = comments
 		options['alloc_ip'] = alloc_ip
 		options['is_virtual'] = is_virtual
+		options['task'] = task
 
-		# Populate network
-		for net in networks:
-			if net['id'] == network:
-				options['network'] = net['subnet']
+		# Populate networking options
+		if alloc_ip:
+			# Domain
+			options['domain'] = domain
+
+			# Get subnet from network ID
+			for net in networks:
+				if net['id'] == network:
+					options['network'] = net['subnet']
 
 		# Populate OS type id
 		for iter_os in oses:
