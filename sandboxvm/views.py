@@ -14,6 +14,9 @@ def sandboxvm_create():
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 
+	# Get the workflow settings
+	wfconfig = app.wfsettings[__name__]
+
 	if request.method == 'GET':
 		## Show form
 		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE')
@@ -56,6 +59,7 @@ def sandboxvm_create():
 		options['purpose'] = purpose
 		options['comments'] = comments
 		options['sendmail'] = sendmail
+		options['wfconfig'] = wfconfig
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()

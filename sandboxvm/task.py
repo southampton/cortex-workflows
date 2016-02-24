@@ -3,10 +3,10 @@
 def run(helper, options):
 
 	# Configuration of task
-	prefix = 'play'
-	vcenter_tag = 'srv01197'
-	domain = 'soton.ac.uk'
-	puppet_cert_domain = 'soton.ac.uk'
+	prefix = options['wfconfig']['PREFIX']
+	vcenter_tag = options['wfconfig']['VCENTER_TAG']
+	domain = options['wfconfig']['DOMAIN']
+	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
 
 	## Allocate a hostname #################################################
 
