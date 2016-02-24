@@ -4,7 +4,7 @@ def run(helper, options):
 
 	# Configuration of task
 	prefix = 'play'
-	vcenter_name = 'srv01197'
+	vcenter_tag = 'srv01197'
 	domain = 'soton.ac.uk'
 	puppet_cert_domain = 'soton.ac.uk'
 
@@ -62,10 +62,15 @@ def run(helper, options):
 		raise RuntimeError("Unknown template specified")
 
 	# Connect to vCenter
-	si = helper.lib.vmware_smartconnect(vcenter_name)
+	si = helper.lib.vmware_smartconnect(vcenter_tag)
+
+	# Get the vm folder to use if any
+	vm_folder = None
+	if "default_folder" in helper.config['VMWARE'][vcenter_tag]:
+		vm_folder = helper.config['VMWARE'][vcenter_tag]['default_folder']
 
 	# Launch the task to clone the virtual machine
-	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec)
+	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder)
 	helper.lib.vmware_task_complete(task, "Failed to create the virtual machine")
 
 	# End the event
@@ -178,7 +183,7 @@ def run(helper, options):
 	# Failure of this does not kill the task
 	try:
 		# Update the cache item
-		helper.lib.update_vm_cache(vm, vcenter_name)
+		helper.lib.update_vm_cache(vm, vcenter_tag)
 
 		# End the event
 		helper.end_event("Updated Cortex VM cache item")
@@ -261,23 +266,25 @@ def run(helper, options):
 
 	if options['sendmail']:
 		# Build the text of the message
-		message =           'Cortex has finished building your VM. The details of the VM can be found below.\n'
-		message = message + '\n'
-		message = message + 'Hostname: ' + system_name + '\n'
-		message = message + 'IP Address: DHCP\n'
-		message = message + 'VMware Cluster: ' + options['cluster'] + '\n'
-		message = message + 'Purpose: ' + options['purpose'] + '\n'
-		message = message + 'Operating System: ' + os_name + '\n'
-		message = message + 'CPUs: ' + str(total_cpu) + '\n'
-		message = message + 'RAM: ' + str(options['ram']) + ' GiB\n'
-		message = message + 'Data Disk: ' + str(options['disk']) + ' GiB\n'
-		message = message + '\n'
-		message = message + 'The event log for the task can be found at https://cortex.dev.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
-		message = message + 'More information about the VM, can be found on the Cortex systems page at https://cortex.dev.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
+		message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
+		message += '\n'
+		message += 'Hostname: ' + system_name + '\n'
+		message += 'IP Address: DHCP\n'
+		message += 'VMware Cluster: ' + options['cluster'] + '\n'
+		message += 'Purpose: ' + options['purpose'] + '\n'
+		message += 'Operating System: ' + os_name + '\n'
+		message += 'CPUs: ' + str(total_cpu) + '\n'
+		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
+		message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
+		message += '\n'
+		message += 'The event log for the task can be found at https://cortex.dev.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
+		message += 'More information about the VM, can be found on the Cortex systems page at https://cortex.dev.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
 		if sys_id is not None:
-			message = message + 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
+			message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
 		else:
-			message = message + 'A ServiceNow CI was not created. For more information, see the task event log.'
+			message += 'A ServiceNow CI was not created. For more information, see the task event log.\n'
+
+		message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter\n'
 
 		# Send the message to the user who started the task
 		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + system_name, message)
