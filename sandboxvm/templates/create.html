@@ -186,8 +186,8 @@ var specs = {
 	},
 	"spec4": {
 		"name": "VM Specification 4",
-		"sockets": 4,
-		"cores": 2,
+		"sockets": 2,
+		"cores": 4,
 		"ram": 16,
 		"disk": 800,
 	},
@@ -212,8 +212,6 @@ function updateTotals()
 		var spec_disk = spec['disk'];
 
 		// Set minimums on sliders (resets slider values to their minimum)
-		setSliderMinimum('#sockets', spec_sockets);
-		setSliderMinimum('#cores', spec_cores);
 		setSliderMinimum('#ram', spec_ram);
 		setSliderMinimum('#disk', spec_disk);
 
@@ -230,7 +228,15 @@ function updateTotals()
 	}
 }
 
-// Helper function
+// Helper functions
+function setSliderValue(selector, val)
+{
+	if ($(selector).slider('getValue') != val)
+	{
+		$(selector).slider('setValue', val);
+	}
+}
+
 function setSliderMinimum(selector, minimum)
 {
 	if ($(selector).slider('getAttribute', 'min') != minimum)
@@ -264,7 +270,16 @@ $(document).ready(function()
 
 	// Update the totals when the inputs change
 	$('input').change(function() { updateTotals(); });
-	
+	$('input[type=radio]').change(function() {
+		var spec = $('label.active input[name=spec]');
+		var spec = specs[$(spec[0]).val()];
+		var spec_sockets = spec['sockets'];
+		var spec_cores = spec['cores'];
+		setSliderValue('#sockets', spec_sockets);
+		setSliderValue('#cores', spec_cores);
+		updateTotals();
+	});
+
 	// Perform initial update of values
 	updateTotals();
 });
