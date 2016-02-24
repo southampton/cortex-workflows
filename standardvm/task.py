@@ -4,17 +4,15 @@ import time
 def run(helper, options):
 
 	# Configuration of task
-	prefix = 'srv'
-	vcenter_tag = 'srv00080'
-	domain = 'soton.ac.uk'
-	network = '192.168.168.0/22'
-	gateway = '192.168.171.254'
-	netmask = '255.255.255.128'
-	dns_servers = ['152.78.110.110', '152.78.111.81', '152.78.111.113']
-	dns_domain = 'soton.ac.uk'
-	puppet_cert_domain = 'soton.ac.uk'
-
-
+	prefix = options['wfconfig']['PREFIX']
+	vcenter_tag = options['wfconfig']['VCENTER_TAG']
+	domain = options['wfconfig']['DOMAIN']
+	network = options['wfconfig']['NETWORK']
+	gateway = options['wfconfig']['GATEWAY']
+	netmask = options['wfconfig']['NETMASK']
+	dns_servers = options['wfconfig']['DNS_SERVERS']
+	dns_domain = options['wfconfig']['DNS_DOMAIN']
+	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
 
 	## Allocate a hostname #################################################
 
