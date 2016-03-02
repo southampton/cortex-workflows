@@ -231,7 +231,8 @@ def run(helper, options):
 
 	## Wait for the VM to finish building ##################################
 
-	# Just for Linux for now...
+	# Linux has separate events for installation starting and installation
+	# finishing, but windows only has installation finishing
 	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
 		# Start the event
 		helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
@@ -248,17 +249,61 @@ def run(helper, options):
 		else:
 			helper.end_event(success=True, description='In-guest installation started')
 
-		# Start another event
-		helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
+	# Start another event
+	helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
 
-		# Wait for the in-guest installer to set the state to 'progress' or 'done'
-		wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
+	# Wait for the in-guest installer to set the state to 'progress' or 'done'
+	wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
 
-		# When it returns, end the event
-		if wait_response is None or wait_response not in ['done']:
-			helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
-		else:
-			helper.end_event(success=True, description='In-guest installation finished')
+	# When it returns, end the event
+	if wait_response is None or wait_response not in ['done']:
+		helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
+	else:
+		helper.end_event(success=True, description='In-guest installation finished')
+
+
+
+	## For Windows VMs, join groups and stuff ##############################
+
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+		# Put in Default OU (failure does not kill task)
+		try:
+			# Start the event
+			helper.event('windows_move_ou', 'Moving Computer object to Default OU')
+
+			# Run RPC to put in default OU
+			helper.lib.windows_move_computer_to_default_ou(system_name)
+
+			# End the event
+			helper.end_event(success=True, description='Moved Computer object to Default OU')
+		except Exception as e:
+			helper.end_event(success=False, description='Failed to put Computer object in OU: ' + str(e))
+
+		# Join default groups (failure does not kill task)
+		try:
+			# Start the event
+			helper.event('windows_join_groups', 'Joining default groups')
+
+			# Run RPC to join groups
+			helper.lib.windows_join_default_groups(system_name)
+
+			# End the event
+			helper.end_event(success=True, description='Joined default groups')
+		except Exception as e:
+			helper.end_event(success=False, description='Failed to join default groups: ' + str(e))
+
+		# Set up computer information (failure does not kill task)
+		try:
+			# Start the event
+			helper.event('windows_set_info', 'Setting Computer object attributes')
+
+			# Run RPC to set information
+			helper.lib.windows_set_computer_details(system_name, options['purpose'], 'B54 Sandbox VMware Cluster')
+
+			# End the event
+			helper.end_event(success=True, description='Computer object attributes set')
+		except Exception as e:
+			helper.end_event(success=False, description='Failed to set Computer object attributes: ' + str(e))
 
 
 

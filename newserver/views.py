@@ -80,6 +80,7 @@ def allocateserver():
 		options['alloc_ip'] = alloc_ip
 		options['is_virtual'] = is_virtual
 		options['task'] = task
+		options['wfconfig'] = wfconfig
 
 		# Populate networking options
 		if alloc_ip:

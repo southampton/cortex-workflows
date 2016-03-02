@@ -1,6 +1,9 @@
 #### Allocate server task
 
 def run(helper, options):
+	# Configuration of task
+	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
+
 	## Allocate a hostname #################################################
 
 	# Start the task
@@ -66,6 +69,21 @@ def run(helper, options):
 		helper.end_event(success=True, description="Created ServiceNow CMDB CI")
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
+
+
+
+	## Register Linux VMs with the built in Puppet ENC #####################
+
+	# Only for Linux VMs...
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+		# Start the event
+		helper.event("puppet_enc_register", "Registering with Puppet ENC")
+
+		# Register with the Puppet ENC
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+
+		# End the event
+		helper.end_event("Registered with Puppet ENC")
 
 
 
