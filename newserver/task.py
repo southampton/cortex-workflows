@@ -75,7 +75,7 @@ def run(helper, options):
 	## Register Linux VMs with the built in Puppet ENC #####################
 
 	# Only for Linux VMs...
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+	if options['os_type'] == helper.lib.OS_TYPE_BY_NAME['Linux']:
 		# Start the event
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
