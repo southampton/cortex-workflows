@@ -7,6 +7,12 @@ def run(helper, options):
 	vcenter_tag = options['wfconfig']['VCENTER_TAG']
 	domain = options['wfconfig']['DOMAIN']
 	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
+	win_full_name = options['wfconfig']['WIN_FULL_NAME']
+	win_org_name = options['wfconfig']['WIN_ORG_NAME']
+	win_location = options['wfconfig']['WIN_LOCATION']
+	win_os_domain = options['wfconfig']['WIN_OS_DOMAIN']
+	win_dev_os_domain = options['wfconfig']['WIN_DEV_OS_DOMAIN']
+	sn_location = options['wfconfig']['SN_LOCATION']
 
 	## Allocate a hostname #################################################
 
@@ -30,32 +36,25 @@ def run(helper, options):
 	# Start the event
 	helper.event("vm_clone", "Creating the virtual machine using VMware API")
 
-	# For RHEL6:
-	if options['template'] == 'rhel6':
-		template_name = 'autotest_rhel6template'
+	# Pull some information out of the configuration
+	template_name = options['wfconfig']['OS_TEMPLATES'][options['template']]
+	os_name =       options['wfconfig']['OS_NAMES'][options['template']]
+	os_disk_size =  options['wfconfig']['OS_DISKS'][options['template']]
+
+	# For RHEL6 or RHEL7:
+	if options['template'] == 'rhel6' or options['template'] == 'rhel7':
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
-		os_name = 'Red Hat Enterprise Linux  6' # Don't delete the second space for now, ServiceNow currently needs it :(
-		os_disk_size = 50
-
-		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
-
-	# For RHEL7:
-	elif options['template'] == 'rhel7':
-		template_name = 'RHEL7-Template'
-		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
-		os_name = 'Red Hat Enterprise Linux 7'
-		os_disk_size = 50
-
-		vm_spec = None #helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='soton.ac.uk', timezone='Europe/London')
+		vm_spec = None
 
 	# For Server 2012R2
 	elif options['template'] == 'windows_server_2012':
-		template_name = '2012R2_Template'
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
-		os_name = 'Microsoft Windows Server 2012'
-		os_disk_size = 100
 
-		vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname='University of Southampton', orgname='University of Southampton')
+		# Build a customisation spec depending on the environment to use the correct domain details
+		if options['env'] == 'dev':
+			vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+		else:
+			vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 
 	# Anything else
 	else:
@@ -82,6 +81,8 @@ def run(helper, options):
 	# If we don't have a VM, then kill the task
 	if vm == None:
 		raise RuntimeError("VM creation failed: VMware API did not return a VM object reference")
+
+
 
 	## Configure vCPUs #####################################################
 
@@ -122,7 +123,7 @@ def run(helper, options):
 	# Add disk to the VM
 	if int(options['disk']) > 0:
 		# Start the event
-		helper.event("vm_add_disk", "Adding disk to the VM")
+		helper.event("vm_add_disk", "Adding data disk to the VM")
 
 		# Reconfigure the VM to add the disk
 		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
@@ -217,7 +218,7 @@ def run(helper, options):
 	# Failure does not kill the task
 	try:
 		# Create the entry in ServiceNow
-		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']) + os_disk_size, environment=options['env'], short_description=options['purpose'], comments=options['comments'], location='B54')
+		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, cpus=total_cpu, ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']) + os_disk_size, environment=options['env'], short_description=options['purpose'], comments=options['comments'], location=sn_location)
 
 		# Update Cortex systems table row with the sys_id
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
@@ -272,7 +273,7 @@ def run(helper, options):
 			helper.event('windows_move_ou', 'Moving Computer object to Default OU')
 
 			# Run RPC to put in default OU
-			helper.lib.windows_move_computer_to_default_ou(system_name)
+			helper.lib.windows_move_computer_to_default_ou(system_name, options['env'])
 
 			# End the event
 			helper.end_event(success=True, description='Moved Computer object to Default OU')
@@ -285,7 +286,7 @@ def run(helper, options):
 			helper.event('windows_join_groups', 'Joining default groups')
 
 			# Run RPC to join groups
-			helper.lib.windows_join_default_groups(system_name)
+			helper.lib.windows_join_default_groups(system_name, options['env'])
 
 			# End the event
 			helper.end_event(success=True, description='Joined default groups')
@@ -298,7 +299,7 @@ def run(helper, options):
 			helper.event('windows_set_info', 'Setting Computer object attributes')
 
 			# Run RPC to set information
-			helper.lib.windows_set_computer_details(system_name, options['purpose'], 'B54 Sandbox VMware Cluster')
+			helper.lib.windows_set_computer_details(system_name, options['env'], options['purpose'], win_location)
 
 			# End the event
 			helper.end_event(success=True, description='Computer object attributes set')
@@ -322,14 +323,17 @@ def run(helper, options):
 		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
 		message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
 		message += '\n'
-		message += 'The event log for the task can be found at https://cortex.dev.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
-		message += 'More information about the VM, can be found on the Cortex systems page at https://cortex.dev.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
+		message += 'The event log for the task can be found at https://cortex.pprd.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
+		message += 'More information about the VM, can be found on the Cortex systems page at https://cortex.pprd.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
 		if sys_id is not None:
 			message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
 		else:
 			message += 'A ServiceNow CI was not created. For more information, see the task event log.\n'
 
-		message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter\n'
+		message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter'
+		if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+			message += ' and to an appropriate OU in Active Directory'
+		message += '\n'
 
 		# Send the message to the user who started the task
 		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + system_name, message)
