@@ -92,32 +92,33 @@ span.required
 				<div style="margin:0 0 0.3em 0">
 					<input type="checkbox" checked="checked" name="alloc_ip" id="alloc_ip" style="margin-right:0.4em" /><label for="alloc_ip" style="position:relative;top:-2px">Allocate an IP and DNS entry</label>
 				</div>
-				<h5 style="font-weight:bold">Network<span id="network_required" class="required">*</span></h5>
-				<select class="selectpicker" name="network" id="network">
+				<div id="network_settings">
+					<h5 style="font-weight:bold">Network<span class="required">*</span></h5>
+					<select class="selectpicker" name="network" id="network">
 {%- if not default_network %}
-					<option></option>
+						<option></option>
 {%- endif %}
 {%- for network in networks %}
-					<option value="{{ network.id }}"{% if default_network == network.id %} selected="selected"{% endif %}>{{ network.name }}</option>
+						<option value="{{ network.id }}"{% if default_network == network.id %} selected="selected"{% endif %}>{{ network.name }}</option>
 {%- endfor %}
-				</select>
-				<h5 style="font-weight:bold">DNS Domain<span id="domain_required" class="required">*</span></h5>
-				<select class="selectpicker" name="domain" id="domain">
+					</select>
+					<h5 style="font-weight:bold">DNS Domain<span class="required">*</span></h5>
+					<select class="selectpicker" name="domain" id="domain">
 {%- if not default_domain %}
-					<option></option>
+						<option></option>
 {%- endif %}
 {%- for domain in domains %}
-					<option value="{{ domain }}"{% if default_domain == domain %} selected="selected"{% endif %}>{{ domain }}</option>
+						<option value="{{ domain }}"{% if default_domain == domain %} selected="selected"{% endif %}>{{ domain }}</option>
 {%- endfor %}
-				</select>
+					</select>
+				</div>
 			</div>
-
 		</div>
 		<div class="col-md-4">
 			<h4>6. Options</h4>
 			<div style="margin-left:1em">
 				<div style="margin:0 0 0.3em 0">
-					<input type="checkbox" checked="checked" name="is_virtual" id="is_virtual" style="margin-right:0.4em" /><label for="is_virtual" style="position:relative;top:-2px">Device is a virtual machine</label>
+					<input type="checkbox" checked="checked" name="is_virtual" id="is_virtual" style="margin-right:0.4em" /><label for="is_virtual" style="position:relative;top:-2px">Device will be a virtual machine</label>
 				</div>
 			</div>	
 		</div>
@@ -132,8 +133,7 @@ span.required
 <script type="text/javascript">
 $('#alloc_ip').change(function(e) {
 	var display = this.checked ? 'inline' : 'none';
-	$('#network_required').css('display', display);
-	$('#domain_required').css('display', display);
+	$('#network_settings').css('display', display);
 });
 $('span.required').attr('title', 'Required');
 $('#allocate').click(function(e) {
