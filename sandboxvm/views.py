@@ -23,7 +23,7 @@ def sandboxvm_create():
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
-		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'cluster' not in request.form or 'environment' not in request.form:
+		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'environment' not in request.form:
 			flash('You must select options for all questions before creating', 'alert-danger')
 			return redirect(url_for('sandboxvm_create'))
 
@@ -33,15 +33,16 @@ def sandboxvm_create():
 		ram      = request.form['ram']
 		disk     = request.form['disk']
 		template = request.form['template']
-		cluster  = request.form['cluster']
+		#cluster  = request.form['cluster']	## Commenting out whilst we only have one cluster
 		env      = request.form['environment']
 		purpose  = request.form['purpose']
 		comments = request.form['comments']
 		sendmail = 'send_mail' in request.form
 
+		## Commenting out whilst we only have one cluster:
 		# Validate cluster against the list we've got
-		if cluster not in [c['name'] for c in clusters]:
-			abort(400)
+		#if cluster not in [c['name'] for c in clusters]:
+		#	abort(400)
 
 		# Validate environment against the list we've got
 		if env not in [e['id'] for e in environments]:
@@ -54,7 +55,8 @@ def sandboxvm_create():
 		options['ram'] = ram
 		options['disk'] = disk
 		options['template'] = template
-		options['cluster'] = cluster
+		#options['cluster'] = cluster	## Commenting out whilst we only have one cluster
+		options['cluster'] = 'CHARTREUSE'
 		options['env'] = env
 		options['purpose'] = purpose
 		options['comments'] = comments

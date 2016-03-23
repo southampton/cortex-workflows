@@ -126,7 +126,7 @@ div.specdetails
 {%- endfor %}
 				</select>
 			</div>
-
+{#- Commenting this out for now as we only have one cluster
 			<h4 style="margin-top:2.2em">6. Choose Location Cluster</h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="cluster" id="cluster">
@@ -136,10 +136,11 @@ div.specdetails
 {%- endfor %}
 				</select>
 			</div>
+#}
 		</div>
 
 		<div class="col-md-4">
-			<h4>7. Summary</h4>
+			<h4>6. Summary</h4>
 			<div style="margin-left: 1em">
 				<p>A VM will be created with the following specifications. The calculated cost is also shown below.</p>
 				<div style="font-size: 120%">
@@ -150,7 +151,7 @@ div.specdetails
 			</div>
 		</div>
 		<div class="col-md-4">
-			<h4>8. Create</h4>
+			<h4>7. Create</h4>
 			<div style="margin:0 0 0.5em 1.0em">
 				<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
 			</div>
