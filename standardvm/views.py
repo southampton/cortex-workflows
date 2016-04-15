@@ -7,18 +7,24 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 @app.workflow_handler(__name__, 'Create Standard VM', 10, methods=['GET','POST'])
 @cortex.lib.user.login_required
 def standardvm_create():
+	# Get the workflow settings
+	wfconfig = app.wfsettings[__name__]
+
 	# Get the list of clusters
-	clusters = cortex.lib.core.vmware_list_clusters("srv00080")
+	all_clusters = cortex.lib.core.vmware_list_clusters("srv00080")
+
+	# Exclude any clusters that the config asks to:
+	clusters = []
+	for cluster in all_clusters:
+		if cluster['name'] not in wfconfig['HIDE_CLUSTERS']:
+			clusters.append(cluster)
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 
-	# Get the workflow settings
-	wfconfig = app.wfsettings[__name__]
-
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Standard Virtual Machine")
+		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, os_names=wfconfig['OS_DISP_NAMES'], title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require

@@ -323,8 +323,8 @@ def run(helper, options):
 		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
 		message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
 		message += '\n'
-		message += 'The event log for the task can be found at https://cortex.pprd.soton.ac.uk/task/status/' + str(helper.task_id) + '\n'
-		message += 'More information about the VM, can be found on the Cortex systems page at https://cortex.pprd.soton.ac.uk/systems/edit/' + str(system_dbid) + '\n'
+		message += 'The event log for the task can be found at https://' + helper.config['CORTEX_DOMAIN'] + '/task/status/' + str(helper.task_id) + '\n'
+		message += 'More information about the VM, can be found on the Cortex systems page at https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system_dbid) + '\n'
 		if sys_id is not None:
 			message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
 		else:

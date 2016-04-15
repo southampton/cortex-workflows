@@ -111,9 +111,9 @@ div.specdetails
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="template" id="template">
 					<option></option>
-					<option value="rhel6">RHEL 6</option>
-					<option value="rhel7">RHEL 7</option>
-					<option value="windows_server_2012">Windows Server 2012 R2</option>
+{% for os in os_names -%}
+					<option value="{{ os }}">{{ os_names[os] }}</option>
+{%- endfor %}
 				</select>
 			</div>
 

@@ -9,7 +9,7 @@
 
 <div class="page-header">
 <h3>Create Standard Virtual Machine</h3>
-<p class="text-muted">This workflow will create a VM on the production environment. A hostname will be automatically allocated from the 'srv' group, and the VM will automatically have an IP address assigned from Infoblox. A ServiceNow CI will also be created automatically.</p>
+<p class="text-muted">This workflow will create a VM on the production environment. A hostname will be automatically allocated from the 'srv' group, and will automatically have an IP address assigned from Infoblox. A ServiceNow CI will also be created.</p>
 </div>
 
 <style type="text/css">
@@ -114,9 +114,9 @@ div.specdetails
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="template" id="template">
 					<option></option>
-					<option value="rhel6">RHEL 6</option>
-					<option value="rhel7">RHEL 7</option>
-					<option value="windows_server_2012">Windows Server 2012 R2</option>
+{% for os in os_names -%}
+					<option value="{{ os }}">{{ os_names[os] }}</option>
+{%- endfor %}
 				</select>
 			</div>
 
