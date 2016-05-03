@@ -24,7 +24,7 @@ def standardvm_create():
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, os_names=wfconfig['OS_DISP_NAMES'], title="Create Standard Virtual Machine")
+		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, os_names=wfconfig['OS_DISP_NAMES'], os_order=wfconfig['OS_ORDER'], title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require

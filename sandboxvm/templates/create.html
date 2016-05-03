@@ -111,7 +111,7 @@ div.specdetails
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="template" id="template">
 					<option></option>
-{% for os in os_names -%}
+{% for os in os_order -%}
 					<option value="{{ os }}">{{ os_names[os] }}</option>
 {%- endfor %}
 				</select>

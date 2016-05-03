@@ -19,7 +19,7 @@ def sandboxvm_create():
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=wfconfig['OS_DISP_NAMES'])
+		return render_template(__name__ + "::create.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=wfconfig['OS_DISP_NAMES'], os_order=wfconfig['OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
