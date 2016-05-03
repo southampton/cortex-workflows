@@ -64,7 +64,7 @@ def run(helper, options):
 	os_disk_size =  options['wfconfig']['OS_DISKS'][options['template']]
 
 	# For RHEL6 or RHEL7:
-	if options['template'] == 'rhel6' or options['template'] == 'rhel7':
+	if options['template'] == 'rhel6' or options['template'] == 'rhel7' or options['template'] == 'rhel6c':
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		vm_spec = None
 
@@ -218,7 +218,7 @@ def run(helper, options):
 	## Register Linux VMs with the built in Puppet ENC #####################
 
 	# Only for Linux VMs...
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
 		# Start the event
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
