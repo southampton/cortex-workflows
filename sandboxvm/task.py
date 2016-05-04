@@ -151,6 +151,27 @@ def run(helper, options):
 
 
 
+	## Update Cortex Cache #################################################
+
+	# We do this so that we don't have to wait for the next run of the 
+	# scheduled VMware import). We do this before powering the VM on 'cos
+	# the cache must be up to date before the installers run inside the VM.
+
+	# Start the event
+	helper.event("update_cache", "Updating Cortex VM cache item")
+
+	# Failure of this does not kill the task
+	try:
+		# Update the cache item
+		helper.lib.update_vm_cache(vm, vcenter_tag)
+
+		# End the event
+		helper.end_event("Updated Cortex VM cache item")
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to update Cortex VM cache item - VMware information may be incorrect")
+
+
+
 	## Power on the VM #####################################################
 
 	# Start the event
@@ -170,26 +191,6 @@ def run(helper, options):
 
 	# End the event
 	helper.end_event(description="VM powered up")	
-
-
-
-	## Update Cortex Cache #################################################
-
-	# We do this so that we don't have to wait for the next run of the 
-	# scheduled VMware import).
-
-	# Start the event
-	helper.event("update_cache", "Updating Cortex VM cache item")
-
-	# Failure of this does not kill the task
-	try:
-		# Update the cache item
-		helper.lib.update_vm_cache(vm, vcenter_tag)
-
-		# End the event
-		helper.end_event("Updated Cortex VM cache item")
-	except Exception as e:
-		helper.end_event(success=False, description="Failed to update Cortex VM cache item - VMware information may be incorrect")
 
 
 
