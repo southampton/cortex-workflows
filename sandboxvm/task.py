@@ -13,6 +13,8 @@ def run(helper, options):
 	win_os_domain = options['wfconfig']['WIN_OS_DOMAIN']
 	win_dev_os_domain = options['wfconfig']['WIN_DEV_OS_DOMAIN']
 	sn_location = options['wfconfig']['SN_LOCATION']
+	network_name = options['wfconfig']['NETWORK_NAME']
+	cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
 
 	## Allocate a hostname #################################################
 
@@ -69,7 +71,7 @@ def run(helper, options):
 		vm_folder = helper.config['VMWARE'][vcenter_tag]['default_folder']
 
 	# Launch the task to clone the virtual machine
-	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder)
+	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder, vm_network=network_name, vm_datastore_cluster=cluster_storage_pools[options['cluster']])
 	helper.lib.vmware_task_complete(task, "Failed to create the virtual machine")
 
 	# End the event
