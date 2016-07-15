@@ -4,6 +4,11 @@
 		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.0.5/bootstrap-slider.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
 		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>        
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script>                
+		<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
 {% endblock %}
 {% block body %}
 
@@ -140,6 +145,27 @@ div.specdetails
 		</div>
 
 		<div class="col-md-4">
+			<h4>6. Expiry date (optional)</h4>
+			<div style="margin-left: 1em">
+				<p>Set the date that this VM will be destroyed.</p>
+				<div class='input-group date' id='expirypicker'>
+					<input type='text' class="form-control" id="expiry" name="expiry" />
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+				<script>
+					$(function () {
+						$('#expirypicker').datetimepicker({
+							viewMode: 'days',
+							format: 'YYYY-MM-DD',
+							minDate: moment(),
+							useCurrent: false,
+						});
+					});
+				</script>
+			</div>
+
 			<h4>6. Summary</h4>
 			<div style="margin-left: 1em">
 				<p>A VM will be created with the following specifications. The calculated cost is also shown below.</p>

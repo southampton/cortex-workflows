@@ -22,7 +22,7 @@ def run(helper, options):
 	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
 	# Allocate the name
-	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username)
+	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
 
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info.keys()[0]
@@ -31,6 +31,7 @@ def run(helper, options):
 	# End the event
 	helper.end_event(description="Allocated system name " + system_name)
 
+	raise RuntimeError("string")
 
 
 	## Create the virtual machine post-clone specification #################

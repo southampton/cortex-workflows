@@ -3,6 +3,7 @@
 from cortex import app
 import cortex.lib.core
 import cortex.views
+import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
 @app.workflow_handler(__name__, 'Create Sandbox VM', 20, methods=['GET', 'POST'])
@@ -37,6 +38,15 @@ def sandboxvm_create():
 		env      = request.form['environment']
 		purpose  = request.form['purpose']
 		comments = request.form['comments']
+		if 'expiry' in request.form and request.form['expiry'] is not None and len(request.form['expiry'].strip()) > 0:
+			expiry = request.form['expiry']
+			try:
+				expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
+			except Exception, e:
+				flash('Submitted date invalid', 'alert-danger')
+				return redirect(url_for('sandboxvm_create'))
+		else:
+			expiry   = None
 		sendmail = 'send_mail' in request.form
 
 		## Commenting out whilst we only have one cluster:
@@ -60,6 +70,7 @@ def sandboxvm_create():
 		options['env'] = env
 		options['purpose'] = purpose
 		options['comments'] = comments
+		options['expiry'] = expiry
 		options['sendmail'] = sendmail
 		options['wfconfig'] = wfconfig
 
