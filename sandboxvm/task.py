@@ -31,9 +31,6 @@ def run(helper, options):
 	# End the event
 	helper.end_event(description="Allocated system name " + system_name)
 
-	raise RuntimeError("string")
-
-
 	## Create the virtual machine post-clone specification #################
 
 	# Start the event
