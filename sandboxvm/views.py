@@ -30,25 +30,57 @@ def sandboxvm_create():
 
 		# Extract all the parameters
 		sockets  = request.form['sockets']
-		cores    = request.form['cores']
-		ram      = request.form['ram']
-		disk     = request.form['disk']
+		cores	 = request.form['cores']
+		ram	 = request.form['ram']
+		disk	 = request.form['disk']
 		template = request.form['template']
 		#cluster  = request.form['cluster']	## Commenting out whilst we only have one cluster
-		env      = request.form['environment']
+		env	 = request.form['environment']
 		purpose  = request.form['purpose']
 		comments = request.form['comments']
-		if 'expiry' in request.form and request.form['expiry'] is not None and len(request.form['expiry'].strip()) > 0:
-			expiry = request.form['expiry']
-			try:
-				expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
-			except Exception, e:
-				flash('Submitted date invalid', 'alert-danger')
-				return redirect(url_for('sandboxvm_create'))
-		else:
-			expiry   = None
 		sendmail = 'send_mail' in request.form
+		
+		#form validation
+		try:
+				sockets = int(sockets)
+				if not 1 <= sockets <= 16:
+					raise ValueError('Sockets out of bounds')
 
+				cores = int(cores)
+				if not 1 <= cores <= 16:
+					raise ValueError('Cores out of bounds')
+
+				ram = int(ram)
+				if not 2 <= ram <= 32:
+					raise ValueError('RAM out of bounds')
+				
+				disk = int(disk)
+				if not 100 <= disk <= 2000:
+					raise ValueError('Disk out of bounds')
+				
+				if template not in wfconfig['OS_ORDER']:
+					raise ValueError('Invalid template')
+				
+				if env not in ['prod', 'preprod', 'dev']:
+					raise ValueError('Invalid environment')
+
+				if 'expiry' in request.form and request.form['expiry'] is not None and len(request.form['expiry'].strip()) > 0:
+					expiry = request.form['expiry']
+					try:
+						expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
+					except Exception, e:
+						flash('Submitted date invalid', 'alert-danger')
+						return redirect(url_for('sandboxvm_create'))
+				else:
+					expiry	 = None
+		except ValueError as e:
+			flash(str(e), 'alert-danger')
+			return redirect(url_for('sandboxvm_create'))
+
+		except Exception as e:
+			flash('Submitted data invalid', 'alert-danger')
+			return redirect(url_for('sandboxvm_create'))
+				
 		## Commenting out whilst we only have one cluster:
 		# Validate cluster against the list we've got
 		#if cluster not in [c['name'] for c in clusters]:
