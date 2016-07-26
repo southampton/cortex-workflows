@@ -42,37 +42,38 @@ def sandboxvm_create():
 		
 		#form validation
 		try:
-				sockets = int(sockets)
-				if not 1 <= sockets <= 16:
-					raise ValueError('Sockets out of bounds')
+			sockets = int(sockets)
+			if not 1 <= sockets <= 16:
+				raise ValueError('Invalid number of sockets selected')
 
-				cores = int(cores)
-				if not 1 <= cores <= 16:
-					raise ValueError('Cores out of bounds')
+			cores = int(cores)
+			if not 1 <= cores <= 16:
+				raise ValueError('Invalid number of cores per socket selected')
 
-				ram = int(ram)
-				if not 2 <= ram <= 32:
-					raise ValueError('RAM out of bounds')
-				
-				disk = int(disk)
-				if not 100 <= disk <= 2000:
-					raise ValueError('Disk out of bounds')
-				
-				if template not in wfconfig['OS_ORDER']:
-					raise ValueError('Invalid template')
-				
-				if env not in ['prod', 'preprod', 'dev']:
-					raise ValueError('Invalid environment')
+			ram = int(ram)
+			if not 2 <= ram <= 32:
+				raise ValueError('Invalid amount of RAM selected')
+			
+			disk = int(disk)
+			if not 100 <= disk <= 2000:
+				raise ValueError('Invalid disk capacity selected')
+			
+			if template not in wfconfig['OS_ORDER']:
+				raise ValueError('Invalid template selected')
+			
+			if env not in ['prod', 'preprod', 'dev']:
+				raise ValueError('Invalid environment selected')
 
-				if 'expiry' in request.form and request.form['expiry'] is not None and len(request.form['expiry'].strip()) > 0:
-					expiry = request.form['expiry']
-					try:
-						expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
-					except Exception, e:
-						flash('Submitted date invalid', 'alert-danger')
-						return redirect(url_for('sandboxvm_create'))
-				else:
-					expiry	 = None
+			if 'expiry' in request.form and request.form['expiry'] is not None and len(request.form['expiry'].strip()) > 0:
+				expiry = request.form['expiry']
+				try:
+					expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
+				except Exception, e:
+					flash('Expiry date must be specified in YYYY-MM-DD format', 'alert-danger')
+					return redirect(url_for('sandboxvm_create'))
+			else:
+				expiry = None
+
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
 			return redirect(url_for('sandboxvm_create'))
