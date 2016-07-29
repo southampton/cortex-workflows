@@ -21,6 +21,7 @@ def run(helper, options):
 	sn_location = options['wfconfig']['SN_LOCATION']
 	network_name = options['wfconfig']['NETWORK_NAME']
 	cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
+	notify_emails = options['notify_emails']
 
 	## Allocate a hostname #################################################
 
@@ -358,7 +359,7 @@ def run(helper, options):
 
 		# Restart the guest
 		helper.lib.vmware_vm_restart_guest(vm)
-		helper.end_event(success=True, 'Initiated guest restart')
+		helper.end_event(success=True, description='Initiated guest restart')
 
 
 
@@ -368,6 +369,7 @@ def run(helper, options):
 		# Build the text of the message
 		message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
 		message += '\n'
+		message += 'ServiceNow Task: ' + options['task'] + '\n'
 		message += 'Hostname: ' + system_name + '\n'
 		message += 'IP Address: ' + ipv4addr + '\n'
 		message += 'VMware Cluster: ' + options['cluster'] + '\n'
@@ -391,3 +393,5 @@ def run(helper, options):
 
 		# Send the message to the user who started the task
 		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + system_name, message)
+		for email in notify_emails: 
+			helper.lib.send_email(email, 'Cortex has finished building your VM, ' + system_name, message)

@@ -316,7 +316,7 @@ def run(helper, options):
 
 		# Restart the guest
 		helper.lib.vmware_vm_restart_guest(vm)
-		helper.end_event(success=True, 'Initiated guest restart')
+		helper.end_event(success=True, description='Initiated guest restart')
 
 
 

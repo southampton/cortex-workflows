@@ -67,6 +67,10 @@ def standardvm_create():
 		options['comments'] = comments
 		options['sendmail'] = sendmail
 		options['wfconfig'] = wfconfig
+		if 'NOTIFY_EMAILS' in app.config:
+			options['notify_emails'] = app.config['NOTIFY_EMAILS']
+		else:
+			options['notify_emails'] = []
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
