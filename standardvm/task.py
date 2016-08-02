@@ -22,6 +22,7 @@ def run(helper, options):
 	network_name = options['wfconfig']['NETWORK_NAME']
 	cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
 	notify_emails = options['notify_emails']
+	win_groups = options['wfconfig']['WIN_GROUPS']
 
 	## Allocate a hostname #################################################
 
@@ -331,7 +332,7 @@ def run(helper, options):
 			helper.event('windows_join_groups', 'Joining default groups')
 
 			# Run RPC to join groups
-			helper.lib.windows_join_default_groups(system_name, options['env'])
+			helper.lib.windows_join_groups(system_name, options['env'], win_groups[options['env']])
 
 			# End the event
 			helper.end_event(success=True, description='Joined default groups')
