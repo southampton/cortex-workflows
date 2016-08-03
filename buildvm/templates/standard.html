@@ -4,6 +4,11 @@
 		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.0.5/bootstrap-slider.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
 		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script> 
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script> 
+		<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
 {% endblock %}
 {% block body %}
 
@@ -57,7 +62,6 @@ div.specdetails
 
 <form method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-
 	<div class="row">
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter request details</h4>
@@ -142,7 +146,28 @@ div.specdetails
 		</div>
 
 		<div class="col-md-4">
-			<h4>7. Summary</h4>
+			<h4>7. Expiry date (optional)</h4>
+			<div style="margin-left: 1em">
+				<p>Set the date that this VM will be automatically powered off.</p>
+				<div class='input-group date' id='expirypicker'>
+					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" />
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+				<script>
+					$(function () {
+						$('#expirypicker').datetimepicker({
+							viewMode: 'days',
+							format: 'YYYY-MM-DD',
+							minDate: moment(),
+							useCurrent: false,
+						});
+					});
+				</script>
+			</div>
+
+			<h4>8. Summary</h4>
 			<div style="margin-left: 1em">
 				<p>A VM will be created with the following specifications. The calculated cost is also shown below.</p>
 				<div style="font-size: 120%">
@@ -160,7 +185,7 @@ div.specdetails
 			</div>
 		</div>
 		<div class="col-md-4">
-			<h4>8. Create</h4>
+			<h4>9. Create</h4>
 			<div style="margin:0 0 0.5em 1.0em">
 				<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
 			</div>

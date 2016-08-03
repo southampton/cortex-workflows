@@ -1,28 +1,54 @@
-#### Standard VM Workflow Task
+#### Combined standard/sandbox VM Workflow Task
 import time
 
 def run(helper, options):
 
+	# Find out which workflow we're wanting to run
+	workflow = options['workflow']
+
 	# Configuration of task
-	prefix = options['wfconfig']['PREFIX']
-	vcenter_tag = options['wfconfig']['VCENTER_TAG']
-	domain = options['wfconfig']['DOMAIN']
-	network = options['wfconfig']['NETWORK']
-	gateway = options['wfconfig']['GATEWAY']
-	netmask = options['wfconfig']['NETMASK']
-	dns_servers = options['wfconfig']['DNS_SERVERS']
-	dns_domain = options['wfconfig']['DNS_DOMAIN']
-	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
-	win_full_name = options['wfconfig']['WIN_FULL_NAME']
-	win_org_name = options['wfconfig']['WIN_ORG_NAME']
-	win_location = options['wfconfig']['WIN_LOCATION']
-	win_os_domain = options['wfconfig']['WIN_OS_DOMAIN']
-	win_dev_os_domain = options['wfconfig']['WIN_DEV_OS_DOMAIN']
-	sn_location = options['wfconfig']['SN_LOCATION']
-	network_name = options['wfconfig']['NETWORK_NAME']
-	cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
-	notify_emails = options['notify_emails']
-	win_groups = options['wfconfig']['WIN_GROUPS']
+	if workflow == 'standard':
+		prefix = options['wfconfig']['PREFIX']
+		vcenter_tag = options['wfconfig']['VCENTER_TAG']
+		domain = options['wfconfig']['DOMAIN']
+		network = options['wfconfig']['NETWORK']
+		gateway = options['wfconfig']['GATEWAY']
+		netmask = options['wfconfig']['NETMASK']
+		dns_servers = options['wfconfig']['DNS_SERVERS']
+		dns_domain = options['wfconfig']['DNS_DOMAIN']
+		puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
+		win_full_name = options['wfconfig']['WIN_FULL_NAME']
+		win_org_name = options['wfconfig']['WIN_ORG_NAME']
+		win_location = options['wfconfig']['WIN_LOCATION']
+		win_os_domain = options['wfconfig']['WIN_OS_DOMAIN']
+		win_dev_os_domain = options['wfconfig']['WIN_DEV_OS_DOMAIN']
+		sn_location = options['wfconfig']['SN_LOCATION']
+		network_name = options['wfconfig']['NETWORK_NAME']
+		cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
+		notify_emails = options['notify_emails']
+		win_groups = options['wfconfig']['WIN_GROUPS']
+		os_templates = options['wfconfig']['OS_TEMPLATES']
+		os_names = options['wfconfig']['OS_NAMES']
+		os_disks = options['wfconfig']['OS_DISKS']
+		expiry = None
+	elif workflow == 'sandbox':
+		prefix = options['wfconfig']['SB_PREFIX']
+		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
+		domain = options['wfconfig']['SB_DOMAIN']
+		puppet_cert_domain = options['wfconfig']['SB_PUPPET_CERT_DOMAIN']
+		win_full_name = options['wfconfig']['SB_WIN_FULL_NAME']
+		win_org_name = options['wfconfig']['SB_WIN_ORG_NAME']
+		win_location = options['wfconfig']['SB_WIN_LOCATION']
+		win_os_domain = options['wfconfig']['SB_WIN_OS_DOMAIN']
+		win_dev_os_domain = options['wfconfig']['SB_WIN_DEV_OS_DOMAIN']
+		sn_location = options['wfconfig']['SB_SN_LOCATION']
+		network_name = options['wfconfig']['SB_NETWORK_NAME']
+		cluster_storage_pools = options['wfconfig']['SB_CLUSTER_STORAGE_POOLS']
+		win_groups = options['wfconfig']['SB_WIN_GROUPS']
+		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
+		os_names = options['wfconfig']['SB_OS_NAMES']
+		os_disks = options['wfconfig']['SB_OS_DISKS']
+		expiry = options['expiry']
 
 	## Allocate a hostname #################################################
 
@@ -30,7 +56,7 @@ def run(helper, options):
 	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
 	# Allocate the name
-	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username)
+	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=expiry)
 
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info.keys()[0]
@@ -40,20 +66,23 @@ def run(helper, options):
 	helper.end_event(description="Allocated system name " + system_name)
 
 
-	## Allocate an IPv4 Address and create a host object ###################
+	## Allocate an IPv4 Address and create a host object (standard only) ###
 
-	# Start the event
-	helper.event("allocate_ipaddress", "Allocating an IP address from " + network)
+	if workflow == 'standard':
+		# Start the event
+		helper.event("allocate_ipaddress", "Allocating an IP address from " + network)
 
-	# Allocate an IP address
-	ipv4addr = helper.lib.infoblox_create_host(system_name + "." + domain, network)
+		# Allocate an IP address
+		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + domain, network)
 
-	# Handle errors - this will stop the task
-	if ipv4addr is None:
-		raise Exception('Failed to allocate an IP address')
+		# Handle errors - this will stop the task
+		if ipv4addr is None:
+			raise Exception('Failed to allocate an IP address')
 
-	# End the event
-	helper.end_event(description="Allocated the IP address " + ipv4addr)
+		# End the event
+		helper.end_event(description="Allocated the IP address " + ipv4addr)
+	else:
+		ipv4addr = None
 
 
 
@@ -63,9 +92,9 @@ def run(helper, options):
 	helper.event("vm_clone", "Creating the virtual machine using VMware API")
 
 	# Pull some information out of the configuration
-	template_name = options['wfconfig']['OS_TEMPLATES'][options['template']]
-	os_name =       options['wfconfig']['OS_NAMES'][options['template']]
-	os_disk_size =  options['wfconfig']['OS_DISKS'][options['template']]
+	template_name = os_templates[options['template']]
+	os_name =       os_names[options['template']]
+	os_disk_size =  os_disks[options['template']]
 
 	# For RHEL6 or RHEL7:
 	if options['template'] == 'rhel6' or options['template'] == 'rhel7' or options['template'] == 'rhel6c':
@@ -77,10 +106,17 @@ def run(helper, options):
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 
 		# Build a customisation spec depending on the environment to use the correct domain details
-		if options['env'] == 'dev':
-			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
-		else:
-			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+		if workflow == 'standard':
+			if options['env'] == 'dev':
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+			else:
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+		elif workflow == 'sandbox':
+			if options['env'] == 'dev':
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+			else:
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+
 
 	# Anything else
 	else:
@@ -205,7 +241,10 @@ def run(helper, options):
 
 	# Set up the necessary values in redis
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
-	helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
+	if workflow == 'standard':
+		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
+	elif workflow == 'sandbox':
+		helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
 
 	# Power on the VM
 	task = helper.lib.vmware_vm_poweron(vm)
@@ -257,10 +296,10 @@ def run(helper, options):
 
 
 
-	## Link ticket to CI ###################################################
+	## Link ticket to CI (standard VM only) ################################
 
 	# If we succeeded in creating a CI, try linking the task
-	if sys_id is not None and options['task'] is not None and len(options['task'].strip()) != 0:
+	if workflow == 'standard' and sys_id is not None and options['task'] is not None and len(options['task'].strip()) != 0:
 		# Start the event
 		helper.event("sn_link_task_ci", "Linking ServiceNow Task to CI")
 
@@ -366,33 +405,37 @@ def run(helper, options):
 
 	## Send success email ##################################################
 
-	if options['sendmail']:
-		# Build the text of the message
-		message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
-		message += '\n'
+	# Build the text of the message
+	message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
+	message += '\n'
+	if workflow == 'standard':
 		message += 'ServiceNow Task: ' + options['task'] + '\n'
-		message += 'Hostname: ' + system_name + '\n'
-		message += 'IP Address: ' + ipv4addr + '\n'
-		message += 'VMware Cluster: ' + options['cluster'] + '\n'
-		message += 'Purpose: ' + options['purpose'] + '\n'
-		message += 'Operating System: ' + os_name + '\n'
-		message += 'CPUs: ' + str(total_cpu) + '\n'
-		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
-		message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
-		message += '\n'
-		message += 'The event log for the task can be found at https://' + helper.config['CORTEX_DOMAIN'] + '/task/status/' + str(helper.task_id) + '\n'
-		message += 'More information about the VM, can be found on the Cortex systems page at https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system_dbid) + '\n'
-		if sys_id is not None:
-			message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
-		else:
-			message += 'A ServiceNow CI was not created. For more information, see the task event log.\n'
+	message += 'Hostname: ' + system_name + '\n'
+	message += 'IP Address: ' + ipv4addr + '\n'
+	message += 'VMware Cluster: ' + options['cluster'] + '\n'
+	message += 'Purpose: ' + options['purpose'] + '\n'
+	message += 'Operating System: ' + os_name + '\n'
+	message += 'CPUs: ' + str(total_cpu) + '\n'
+	message += 'RAM: ' + str(options['ram']) + ' GiB\n'
+	message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
+	message += '\n'
+	message += 'The event log for the task can be found at https://' + helper.config['CORTEX_DOMAIN'] + '/task/status/' + str(helper.task_id) + '\n'
+	message += 'More information about the VM, can be found on the Cortex systems page at https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system_dbid) + '\n'
+	if sys_id is not None:
+		message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
+	else:
+		message += 'A ServiceNow CI was not created. For more information, see the task event log.\n'
 
-		message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter'
-		if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
-			message += ' and to an appropriate OU in Active Directory'
-		message += '\n'
+	message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter'
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+		message += ' and to an appropriate OU in Active Directory'
+	message += '\n'
 
-		# Send the message to the user who started the task
+	# Send the message to the user who started the task (if they want it)
+	if options['sendmail']:
 		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + system_name, message)
+
+	# For standard VMs only, always notify people in the notify_emails list
+	if workflow == 'standard':
 		for email in notify_emails: 
-			helper.lib.send_email(email, 'Cortex has finished building your VM, ' + system_name, message)
+			helper.lib.send_email(email, 'Cortex has finished building a VM, ' + system_name, message)
