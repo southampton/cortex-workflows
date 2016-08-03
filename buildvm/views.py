@@ -6,6 +6,9 @@ import cortex.views
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
+################################################################################
+## Sandbox VM Workflow view handler
+
 @app.workflow_handler(__name__, 'Create Sandbox VM', 20, methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def sandbox():
@@ -26,71 +29,27 @@ def sandbox():
 		# Ensure we have all parameters that we require
 		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'environment' not in request.form:
 			flash('You must select options for all questions before creating', 'alert-danger')
-			return redirect(url_for('sandboxvm_create'))
-
-		# Extract all the parameters
-		sockets  = request.form['sockets']
-		cores	 = request.form['cores']
-		ram	 = request.form['ram']
-		disk	 = request.form['disk']
-		template = request.form['template']
-		#cluster  = request.form['cluster']	## Commenting out whilst we only have one cluster
-		env	 = request.form['environment']
-		purpose  = request.form['purpose']
-		comments = request.form['comments']
-		sendmail = 'send_mail' in request.form
+			return redirect(url_for('sandbox'))
 		
-		#form validation
+		# Form validation
 		try:
-			sockets = int(sockets)
-			if not 1 <= sockets <= 16:
-				raise ValueError('Invalid number of sockets selected')
+			# Extract all the parameters
+			purpose  = request.form['purpose']
+			comments = request.form['comments']
+			sendmail = 'send_mail' in request.form
 
-			cores = int(cores)
-			if not 1 <= cores <= 16:
-				raise ValueError('Invalid number of cores per socket selected')
+			# Validate the data (common between standard / sandbox)
+			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, wfconfig['OS_ORDER'], [e['id'] for e in environments])
 
-			ram = int(ram)
-			if not 2 <= ram <= 32:
-				raise ValueError('Invalid amount of RAM selected')
-			
-			disk = int(disk)
-			if not 100 <= disk <= 2000:
-				raise ValueError('Invalid disk capacity selected')
-			
-			if template not in wfconfig['SB_OS_ORDER']:
-				raise ValueError('Invalid template selected')
-			
-			if env not in ['prod', 'preprod', 'dev']:
-				raise ValueError('Invalid environment selected')
-
-			if 'expiry' in request.form and request.form['expiry'] is not None and len(request.form['expiry'].strip()) > 0:
-				expiry = request.form['expiry']
-				try:
-					expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
-				except Exception, e:
-					flash('Expiry date must be specified in YYYY-MM-DD format', 'alert-danger')
-					return redirect(url_for('sandboxvm_create'))
-			else:
-				expiry = None
-
+			return redirect(url_for('sandbox'))
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
-			return redirect(url_for('sandboxvm_create'))
+			return redirect(url_for('sandbox'))
 
 		except Exception as e:
-			flash('Submitted data invalid', 'alert-danger')
-			return redirect(url_for('sandboxvm_create'))
+			flash('Submitted data invalid ' + str(e), 'alert-danger')
+			return redirect(url_for('sandbox'))
 				
-		## Commenting out whilst we only have one cluster:
-		# Validate cluster against the list we've got
-		#if cluster not in [c['name'] for c in clusters]:
-		#	abort(400)
-
-		# Validate environment against the list we've got
-		if env not in [e['id'] for e in environments]:
-			abort(400)
-
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'sandbox'
@@ -115,6 +74,8 @@ def sandbox():
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
 
+################################################################################
+## Standard VM Workflow view handler
 
 @app.workflow_handler(__name__, 'Create Standard VM', 10, methods=['GET','POST'])
 @cortex.lib.user.login_required
@@ -142,29 +103,32 @@ def standard():
 		# Ensure we have all parameters that we require
 		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'cluster' not in request.form or 'environment' not in request.form:
 			flash('You must select options for all questions before creating', 'alert-danger')
-			return redirect(url_for('standardvm_create'))
+			return redirect(url_for('standard'))
 
-		# Extract all the parameters
-		sockets  = request.form['sockets']
-		cores    = request.form['cores']
-		ram      = request.form['ram']
-		disk     = request.form['disk']
-		template = request.form['template']
-		cluster  = request.form['cluster']
-		env      = request.form['environment']
-		task     = request.form['task']
-		purpose  = request.form['purpose']
-		comments = request.form['comments']
-		sendmail = 'send_mail' in request.form
+		# Form validation
+		try:
+			# Extract the parameters (some are extracted by validate_data)
+			cluster  = request.form['cluster']
+			task     = request.form['task']
+			purpose  = request.form['purpose']
+			comments = request.form['comments']
+			sendmail = 'send_mail' in request.form
 
-		# Validate cluster against the list we've got
-		if cluster not in [c['name'] for c in clusters]:
-			abort(400)
+			# Validate the data (common between standard / sandbox)
+			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, wfconfig['OS_ORDER'], [e['id'] for e in environments])
 
-		# Validate environment against the list we've got
-		if env not in [e['id'] for e in environments]:
-			abort(400)
+			# Validate cluster against the list we've got
+			if cluster not in [c['name'] for c in clusters]:
+				raise ValueError('Invalid cluster selected')
 
+		except ValueError as e:
+			flash(str(e), 'alert-danger')
+			return redirect(url_for('standard'))
+
+		except Exception as e:
+			flash('Submitted data invalid', 'alert-danger')
+			return redirect(url_for('standard'))
+	
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'standard'
@@ -180,6 +144,7 @@ def standard():
 		options['comments'] = comments
 		options['sendmail'] = sendmail
 		options['wfconfig'] = wfconfig
+		options['expiry'] = expiry
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']
 		else:
@@ -192,3 +157,47 @@ def standard():
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
 
+################################################################################
+## Common data validation / form extraction
+
+def validate_data(r, templates, envs):
+	# Pull data out of request
+	sockets  = r.form['sockets']
+	cores	 = r.form['cores']
+	ram	 = r.form['ram']
+	disk	 = r.form['disk']
+	template = r.form['template']
+	env	 = r.form['environment']
+
+	sockets = int(sockets)
+	if not 1 <= sockets <= 16:
+		raise ValueError('Invalid number of sockets selected')
+
+	cores = int(cores)
+	if not 1 <= cores <= 16:
+		raise ValueError('Invalid number of cores per socket selected')
+
+	ram = int(ram)
+	if not 2 <= ram <= 32:
+		raise ValueError('Invalid amount of RAM selected')
+	
+	disk = int(disk)
+	if not 100 <= disk <= 2000:
+		raise ValueError('Invalid disk capacity selected')
+	
+	if template not in templates:
+		raise ValueError('Invalid template selected')
+	
+	if env not in envs:
+		raise ValueError('Invalid environment selected')
+
+	if 'expiry' in r.form and r.form['expiry'] is not None and len(r.form['expiry'].strip()) > 0:
+		expiry = r.form['expiry']
+		try:
+			expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
+		except Exception, e:
+			raise ValueError('Expiry date must be specified in YYYY-MM-DD format')
+	else:
+		expiry = None
+
+	return (sockets, cores, ram, disk, template, env, expiry)
