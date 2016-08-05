@@ -15,6 +15,9 @@ def allocateserver():
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)
 
+	# Extract the classes the have servers in (so hide storage and switches, for example)
+	server_classes = [c for c in classes if c['cmdb_type'] == "cmdb_ci_server"]
+
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 
@@ -29,7 +32,7 @@ def allocateserver():
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", title="Allocate new server", classes=classes, default_class=wfconfig['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=wfconfig['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=wfconfig['DEFAULT_DOMAIN'])
+		return render_template(__name__ + "::create.html", title="Allocate new server", classes=server_classes, default_class=wfconfig['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=wfconfig['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=wfconfig['DEFAULT_DOMAIN'])
 
 	elif request.method == 'POST':
 		if 'purpose' not in request.form or 'comments' not in request.form or 'class' not in request.form or 'os' not in request.form or 'environment' not in request.form or 'network' not in request.form or 'domain' not in request.form:
