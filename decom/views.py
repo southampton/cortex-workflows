@@ -73,14 +73,14 @@ def decom_step2(id):
 				actions.append({'id': 'dnsdelete', 'desc': 'Delete the DNS record ', 'detail': 'Delete the name ' + system['name'] + '.soton.ac.uk - Infoblox reference: ' + ref, 'data': ref})
 
 	except Exception as ex:
-		flash("Warning - An error occured when communicating with Infoblox: " + str(ex),"alert-warning")
+		flash("Warning - An error occured when communicating with Infoblox: " + str(type(ex)) + " - " + str(ex),"alert-warning")
 
 	## Check if a puppet record exists
 	if 'puppet_certname' in system:
 		if system['puppet_certname'] is not None:
 			if len(system['puppet_certname']) > 0:
-				actions.append({'id': 'puppetencdelete', 'desc': 'Delete the Puppet ENC configuration', 'detail': ''})
-				actions.append({'id': 'puppetmasterdelete', 'desc': 'Delete the system from the Puppet Master', detail: ''})
+				actions.append({'id': 'puppetencdelete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + request.url_root})
+				actions.append({'id': 'puppetmasterdelete', 'desc': 'Delete the system from the Puppet Master', 'detail': ''})
 
 	## Check if there is an Active Directory computer object to delete
 	# If systemenv is None, assume 'prod' AD domain
@@ -97,7 +97,7 @@ def decom_step2(id):
 			actions.append({'id': 'addelete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + app.config['WINRPC'][adenv]['domain']})
 
 	except Exception as ex:
-		flash("Warning - An error occured when communicating with Active Directory: " + str(ex),"alert-warning")
+		flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex),"alert-warning")
 
 
 	return render_template(__name__ + "::step2.html", actions=actions, system=system, title="Decommission Node")
