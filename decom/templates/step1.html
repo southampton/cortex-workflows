@@ -5,9 +5,12 @@
 	<div class="text-muted"><strong>System:</strong> {{system.name}}</div>
 </div>
 <p>This process will attempt to fully decomission the system. To get started I must first run a few checks to determine what steps I need to perform.</p>
-<a class="btn btn-primary btn-lg" href="{{url_for('decom_step2',id=system['id'])}}">Check system</a>
 
-<pre>
+<div class="text-center">
+<a class="btn btn-primary btn-lg" href="{{url_for('decom_step2',id=system['id'])}}">Check system</a>
+</div>
+
+<!--<pre>
 {{system}}
-</pre>
+</pre>-->
 {% endblock %}

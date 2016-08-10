@@ -1,18 +1,26 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-	<h1>Decommission system, step 2</h1>
+	<h1>Decommission system</h1>
 	<div class="text-muted"><strong>System:</strong> {{system.name}}</div>
 </div>
 <p>The following steps will be taken to decomission this system:</p>
 
 <ul class="list-group">
 {% for action in actions %}
-<li class="list-group-item"><span class="badge">{{action.id}}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}<br/><span class="text-muted">{{action.detail}}</span></li>
+<li class="list-group-item">
+	<span class="badge">{{action.id}}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
+	<br/><span class="text-muted">{{action.detail}}</span>
+</li>
 {%endfor%}
 </ul>
 
-
-<a class="btn btn-primary btn-lg" href="{{url_for('decom_step2',id=system['id'])}}">JUST. DO. IT</a>
+<form role="form" action="{{ url_for('decom_step3',id=system['id']) }}" method="POST">
+	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+	<input name="actions" type="hidden" value="{{json_data}}"/>
+	<div class="text-center">
+		<input class="btn btn-primary btn-lg" type="submit" name="submit" value="Decommission"/>
+	</div>
+</form>
 
 {% endblock %}
