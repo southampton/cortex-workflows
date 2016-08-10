@@ -66,6 +66,7 @@ def run(helper, options):
 	helper.end_event(description="Allocated system name " + system_name)
 
 
+
 	## Allocate an IPv4 Address and create a host object (standard only) ###
 
 	if workflow == 'standard':
@@ -410,7 +411,7 @@ def run(helper, options):
 	message += '\n'
 	if workflow == 'standard':
 		message += 'ServiceNow Task: ' + options['task'] + '\n'
-	message += 'Hostname: ' + system_name + '\n'
+	message += 'Hostname: ' + system_name + '.' + domain + '\n'
 	message += 'IP Address: ' + ipv4addr + '\n'
 	message += 'VMware Cluster: ' + options['cluster'] + '\n'
 	message += 'Purpose: ' + options['purpose'] + '\n'
