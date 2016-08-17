@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.core
+from cortex.lib.user import can_user_access_workflow
 import cortex.views
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
@@ -12,6 +13,10 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 @app.workflow_handler(__name__, 'Create Sandbox VM', 20, methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def sandbox():
+	# Check permissions
+	if not can_user_access_workflow("sandbox"):
+		abort(403)
+
 	# Get the list of clusters
 	clusters = cortex.lib.core.vmware_list_clusters("srv01197")
 
@@ -80,6 +85,10 @@ def sandbox():
 @app.workflow_handler(__name__, 'Create Standard VM', 10, methods=['GET','POST'])
 @cortex.lib.user.login_required
 def standard():
+	# Check permissions
+	if not can_user_access_workflow("standard"):
+		abort(403)
+
 	# Get the workflow settings
 	wfconfig = app.wfsettings[__name__]
 
