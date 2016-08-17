@@ -60,7 +60,7 @@ def decom_step2(id):
 				if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
 					actions.append({'id': 'vm.poweroff', 'desc': 'Power off the Virtual Machine', 'detail': 'UUID ' + system['vmware_uuid']})
 			
-				actions.append({'id': 'vmdelete', 'desc': 'Delete the virtual machine', 'detail': ' UUID ' + system['vmware_uuid']})
+				actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine', 'detail': ' UUID ' + system['vmware_uuid']})
 
 	## Is the system linked to service now?
 	if 'cmdb_id' in system:
