@@ -3,12 +3,17 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.classes
+from cortex.lib.user import can_user_access_workflow
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
 @app.workflow_handler(__name__, 'Allocate server', 30, methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def allocateserver():
+	# Check permissions
+	if not can_user_access_workflow("allocateserver"):
+		abort(403)
+
 	# Get workflow settings
 	wfconfig = app.wfsettings[__name__]
 
