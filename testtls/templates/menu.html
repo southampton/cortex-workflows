@@ -6,7 +6,7 @@
 <p>This process will attempt to test a server's SSL/TLS configution an report findings.</p>
 
 <div class="container" role="main">
-<form role="form" method="GET" class="form-horizontal">
+<form role="form" action="{{ url_for('testtls') }}" method="POST" class="form-horizontal">
     <input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
     <div class="form-group">
 	<label class="col-sm-4 control-label">Hostname/IP</label>

@@ -11,13 +11,17 @@ import re
 #
 #config
 #
-testCmd = "/data/cortex/cortex/bin/testssl.sh"
-stdArgs = ["--quiet"]
+testcmd = "/data/cortex/cortex/bin/testssl.sh"
+stdargs = ["--quiet"]
 checkTimeout = 90
 protocols = ["ftp", "smtp", "pop3", "imap", "xmpp", "telnet", "ldap"]
 
 @app.workflow_handler(__name__, 'testtls', workflow_type=app.WF_SYSTEM_ACTION, workflow_desc="Tests the TLS/SSL configuration of a system")
 @app.workflow_handler(__name__, 'testtls', workflow_desc="Tests the TLS/SSL configuration of a system")
+def test(id=None):
+	return render_template(__name__ + "::menu.html", host=None, title="Test SSL/TLS")
+
+@app.workflow_route("/test", methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def testtls(id=None):
 	if request.method == 'GET':
@@ -67,8 +71,8 @@ def testtls(id=None):
 		# Build command
 		#
 
-		args = testsslcmd
-		args += [stdargs]
+		args = [testcmd]
+		args += stdargs
 		if starttls:
 			args.append("-t")
 			args.append(protocol)
@@ -77,17 +81,11 @@ def testtls(id=None):
 		#
 		# GO
 		#
-		
-		try:
-			test = Popen(args, stdout=PIPE, stderr=PIPE)
-			out, err = check.communicate(timeout=checkTimeout)
-			if test.returncode != 0:
-				flash("Scan failed")
-		except TimeoutExpired as e:
-			flash("Scan failed")
-			test.terminate()
-
-		html = "<pre>" + str(out, 'utf-8') + "</pre>"
+		###########3TIME FOR AJAX :)
+		for line in test(args):
+			app.logger.debug(line)
+		# end ""?
+		html = "<pre>" + str(out) + "</pre>"
 		
 		#try:
 		#	renderer = Popen([rendererCmd], stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -99,10 +97,18 @@ def testtls(id=None):
 		#		flash("HTML formatting failed - see raw output below")
 		#		renderer.terminate()
 
-
 	return render_template(__name__ + "::results.html", output=html, title="Test TLS")
 
 ############################################################################################
+def test(cmd):
+	test = Popen(cmd, stdout=PIPE, universal_newlines=True)
+	for line in iter(test.stdout.readline, ""):
+		yield line
+	
+	test.stdout.close()
+	return_code = test.wait()
+	if return_code != 0:
+		raise CalledProcessError(return_code, cmd)
 
 def is_valid_host(host):
 	"""Returns true if the given host is valid"""
