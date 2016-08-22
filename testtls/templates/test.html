@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+	<h1>Test SSL/TLS</h1>
+</div>
+<p>This process will attempt to test a server's SSL/TLS configution and report findings.</p>
+
+<div class="container" role="main">
+<form role="form" action="{{ url_for('testtls') }}" method="POST" class="form-horizontal">
+    <input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+    <div class="form-group">
+	<label class="col-sm-4 control-label">Hostname/IP</label>
+	<div class="col-sm-4">
+	    <input type="text" name="host" class="form-control" value="{{ host or ''}}" />
+	</div>
+    </div>
+    <div class="form-group">
+	<label class="col-sm-4 control-label">Port</label>
+	<div class="col-sm-4">
+	    <input type="number" name="port" min="0" max="65535" value="{{ port or '443' }}" class="form-control" />
+	</div>
+    </div>
+    <div class="form-group">
+	<label class="col-sm-4 control-label">Use STARTTLS</label>
+	<div class="col-sm-4">
+	    <input type="checkbox" class="checkbox" name="starttls" value="yes" class="form-control"> 
+	    STARTTLS Protocol:
+	    <select name="protocol" class="form-control">
+		<option value="ftp">ftp</option>
+		<option value="smtp">smtp</option>
+		<option value="pop3">pop3</option>
+		<option value="imap">imap</option>
+		<option value="xmpp">xmpp</option>
+		<option value="telnet">telnet</option>
+		<option value="ldap">ldap</option>
+	    </select>
+	</div>
+    <div class="form-group">
+	<div class="col-sm-offset-4 col-sm-4">
+	    <input type="submit" class="btn btn-primary" value="Perform TLS/SSL Check">
+	</div>
+    </div>
+	{% if styles %}<style>{{styles}}</style>{% endif%}
+	{% if output %}<pre>{% for line in output %}{{ line|safe }}{% endfor %}</pre>{% endif %}
+	
+</form>
+</div>
+
+{% endblock %}
