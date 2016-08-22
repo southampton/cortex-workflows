@@ -40,6 +40,7 @@
 	    <input type="submit" class="btn btn-primary" value="Perform TLS/SSL Check">
 	</div>
     </div>
+	{% if styles %}<style>{{styles}}</style>{% endif%}
 	{% if output %}<pre>{% for line in output %}{{ line|safe }}{% endfor %}</pre>{% endif %}
 	
 </form>
