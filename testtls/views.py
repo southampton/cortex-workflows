@@ -4,7 +4,7 @@ from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
 from cortex.corpus import Corpus
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
+from flask import Flask, request, Response, session, redirect, url_for, flash, g, abort, render_template, stream_with_context
 from subprocess import Popen, PIPE, CalledProcessError
 import re
 
@@ -15,6 +15,7 @@ testcmd = "/data/cortex/cortex/bin/testssl.sh"
 stdargs = ["--quiet"]
 checkTimeout = 90
 protocols = ["ftp", "smtp", "pop3", "imap", "xmpp", "telnet", "ldap"]
+output = None
 
 @app.workflow_handler(__name__, 'testtls', workflow_type=app.WF_SYSTEM_ACTION, workflow_desc="Tests the TLS/SSL configuration of a system")
 @app.workflow_handler(__name__, 'testtls', workflow_desc="Tests the TLS/SSL configuration of a system")
@@ -71,22 +72,28 @@ def testtls(id=None):
 		# Build command
 		#
 
-		args = [testcmd]
-		args += stdargs
+		cmd = [testcmd]
+		cmd += stdargs
 		if starttls:
-			args.append("-t")
-			args.append(protocol)
-		args.append(host + ":" + str(port))
+			cmd.append("-t")
+			cmd.append(protocol)
+		cmd.append(host + ":" + str(port))
 
 		#
 		# GO
 		#
 		###########3TIME FOR AJAX :)
-		for line in test(args):
-			app.logger.debug(line)
-		# end ""?
-		html = "<pre>" + str(out) + "</pre>"
-		
+		#for line in test(args):
+		#	app.logger.debug(line)
+		def scan(cmd):
+			scan = Popen(cmd, stdout=PIPE, universal_newlines=True)
+			for line in iter(scan.stdout.readline, ""):
+				yield line
+			
+			scan.stdout.close()
+			return_code = scan.wait()
+			if return_code != 0:
+				raise CalledProcessError(return_code, cmd)
 		#try:
 		#	renderer = Popen([rendererCmd], stdin=PIPE, stdout=PIPE, stderr=PIPE)
             	#	html, err = renderer.communicate(input=output, timeout=rendererTimeout)
@@ -96,19 +103,20 @@ def testtls(id=None):
 		#	except TimeoutExpired as e:
 		#		flash("HTML formatting failed - see raw output below")
 		#		renderer.terminate()
+		
+		#return render_template(__name__ + "::menu.html", host=None, title="Test SSL/TLS")
+		return Response(stream_with_context(stream_template(__name__ + "::menu.html", output=scan(cmd))))
 
-	return render_template(__name__ + "::results.html", output=html, title="Test TLS")
+###########################################################################################
 
-############################################################################################
-def test(cmd):
-	test = Popen(cmd, stdout=PIPE, universal_newlines=True)
-	for line in iter(test.stdout.readline, ""):
-		yield line
-	
-	test.stdout.close()
-	return_code = test.wait()
-	if return_code != 0:
-		raise CalledProcessError(return_code, cmd)
+def stream_template(template_name, **context):
+    app.update_template_context(context)
+    t = app.jinja_env.get_template(template_name)
+    rv = t.stream(context)
+    rv.enable_buffering(5)
+    return rv
+
+###########################################################################################
 
 def is_valid_host(host):
 	"""Returns true if the given host is valid"""

@@ -40,6 +40,8 @@
 	    <input type="submit" class="btn btn-primary" value="Perform TLS/SSL Check">
 	</div>
     </div>
+	<pre>{% for line in output %}{{ line|safe }}{% endfor %}</pre>
+	
 </form>
 </div>
 
