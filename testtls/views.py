@@ -13,9 +13,7 @@ import re
 #
 testcmd = "/data/cortex/cortex/bin/testssl.sh"
 stdargs = ["--quiet"]
-checkTimeout = 90
 protocols = ["ftp", "smtp", "pop3", "imap", "xmpp", "telnet", "ldap"]
-output = None
 
 @app.workflow_handler(__name__, 'testtls', workflow_type=app.WF_SYSTEM_ACTION, workflow_desc="Tests the TLS/SSL configuration of a system")
 @app.workflow_handler(__name__, 'testtls', workflow_desc="Tests the TLS/SSL configuration of a system")

@@ -3,7 +3,7 @@
 <div class="page-header">
 	<h1>Test SSL/TLS</h1>
 </div>
-<p>This process will attempt to test a server's SSL/TLS configution an report findings.</p>
+<p>This process will attempt to test a server's SSL/TLS configution and report findings.</p>
 
 <div class="container" role="main">
 <form role="form" action="{{ url_for('testtls') }}" method="POST" class="form-horizontal">
@@ -40,7 +40,7 @@
 	    <input type="submit" class="btn btn-primary" value="Perform TLS/SSL Check">
 	</div>
     </div>
-	<pre>{% for line in output %}{{ line|safe }}{% endfor %}</pre>
+	{% if output %}<pre>{% for line in output %}{{ line|safe }}{% endfor %}</pre>{% endif %}
 	
 </form>
 </div>
