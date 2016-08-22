@@ -15,16 +15,22 @@ testcmd = "/data/cortex/cortex/bin/testssl.sh"
 stdargs = ["--quiet"]
 protocols = ["ftp", "smtp", "pop3", "imap", "xmpp", "telnet", "ldap"]
 
-@app.workflow_handler(__name__, 'testtls', workflow_type=app.WF_SYSTEM_ACTION, workflow_desc="Tests the TLS/SSL configuration of a system")
-@app.workflow_handler(__name__, 'testtls', workflow_desc="Tests the TLS/SSL configuration of a system")
+@app.workflow_handler(__name__, 'Test TLS/SSL', workflow_type=app.WF_SYSTEM_ACTION, workflow_desc="Tests the TLS/SSL configuration of a system")
+@app.workflow_handler(__name__, 'Test TLS/SSL', workflow_desc="Tests the TLS/SSL configuration of a system")
 def test(id=None):
-	return render_template(__name__ + "::menu.html", host=None, title="Test SSL/TLS")
+	host=None
+	if id is not None:
+		host=cortex.lib.systems.get_system_by_id(id)['name']
+	return render_template(__name__ + "::test.html", host=host, title="Test SSL/TLS")
 
 @app.workflow_route("/test", methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def testtls(id=None):
+	host=None
+	if id is not None:
+		host=cortex.lib.systems.get_system_by_id(id)['name']
 	if request.method == 'GET':
-		return render_template(__name__ + "::menu.html", host=None, title="Test SSL/TLS")
+		return render_template(__name__ + "::test.html", host=host, title="Test SSL/TLS")
 
 	elif request.method == 'POST':
 
@@ -80,9 +86,6 @@ def testtls(id=None):
 		#
 		# GO
 		#
-		###########3TIME FOR AJAX :)
-		#for line in test(args):
-		#	app.logger.debug(line)
 		def scan(cmd):
 			scan = Popen(cmd, stdout=PIPE, universal_newlines=True)
 			for line in iter(scan.stdout.readline, ""):
@@ -92,18 +95,8 @@ def testtls(id=None):
 			return_code = scan.wait()
 			if return_code != 0:
 				raise CalledProcessError(return_code, cmd)
-		#try:
-		#	renderer = Popen([rendererCmd], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            	#	html, err = renderer.communicate(input=output, timeout=rendererTimeout)
-        	#	if renderer.returncode != 0:
-		#		html = "<pre>" + str(err, 'utf-8') + "</pre>"
-		#		flash("HTML formatting failed with error code " + str(renderer.returncode) + " - see raw output below")
-		#	except TimeoutExpired as e:
-		#		flash("HTML formatting failed - see raw output below")
-		#		renderer.terminate()
 		
-		#return render_template(__name__ + "::menu.html", host=None, title="Test SSL/TLS")
-		return Response(stream_with_context(stream_template(__name__ + "::menu.html", output=scan(cmd), styles=styleSheet())))
+		return Response(stream_with_context(stream_template(__name__ + "::test.html", output=scan(cmd), styles=styleSheet(), host=host, port=port)))
 
 ###########################################################################################
 
@@ -153,7 +146,6 @@ attribCodes = {
 	3 : 'italic',
 	4 : 'underscore',
 	5 : 'blink',
-# TODO: Chek that 6 is ignored on enable and disable or enable it
 #	6 : 'blink_rapid',
 	7 : 'reverse',
 	8 : 'hide',
