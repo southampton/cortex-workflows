@@ -20,7 +20,11 @@ protocols = ["ftp", "smtp", "pop3", "imap", "xmpp", "telnet", "ldap"]
 def test(id=None):
 	host=None
 	if id is not None:
-		host=cortex.lib.systems.get_system_by_id(id)['name']
+		system = cortex.lib.systems.get_system_by_id(id)
+		if system['class'] == 'play':
+			host = system['name'] + '.sandbox.soton.ac.uk'
+		else:
+			host = system['name'] + '.soton.ac.uk'
 	return render_template(__name__ + "::test.html", host=host, title="Test SSL/TLS")
 
 @app.workflow_route("/test", methods=['GET', 'POST'])
@@ -28,7 +32,11 @@ def test(id=None):
 def testtls(id=None):
 	host=None
 	if id is not None:
-		host=cortex.lib.systems.get_system_by_id(id)['name']
+		system = cortex.lib.systems.get_system_by_id(id)
+		if system['class'] == 'play':
+			host = system['name'] + '.sandbox.soton.ac.uk'
+		else:
+			host = system['name'] + '.soton.ac.uk'
 	if request.method == 'GET':
 		return render_template(__name__ + "::test.html", host=host, title="Test SSL/TLS")
 
