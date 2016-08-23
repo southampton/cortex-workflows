@@ -7,6 +7,7 @@ from cortex.corpus import Corpus
 from flask import Flask, request, Response, session, redirect, url_for, flash, g, abort, render_template, stream_with_context
 from subprocess import Popen, PIPE, CalledProcessError
 import re
+from itsdangerous import JSONWebSignatureSerializer
 
 #
 #config
@@ -91,20 +92,9 @@ def testtls(id=None):
 			cmd.append(protocol)
 		cmd.append(host + ":" + str(port))
 
-		#
-		# GO
-		#
-		def scan(cmd):
-			scan = Popen(cmd, stdout=PIPE, universal_newlines=True)
-			for line in iter(scan.stdout.readline, ""):
-				yield deansi(line)
-			
-			scan.stdout.close()
-			return_code = scan.wait()
-			if return_code != 0:
-				raise CalledProcessError(return_code, cmd)
-		
-		return Response(stream_with_context(stream_template(__name__ + "::test.html", output=scan(cmd), styles=styleSheet(), host=host, port=port)))
+		s = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
+		scmd = s.dumps(cmd)
+		return render_template(__name__ + "::test.html", styles=styleSheet(), host=host, port=port, scmd=scmd, getoutput=True)
 
 ###########################################################################################
 
@@ -115,6 +105,33 @@ def stream_template(template_name, **context):
     rv.enable_buffering(5)
     return rv
 
+#
+# GO
+#
+def scan(cmd):
+	scan = Popen(cmd, stdout=PIPE, universal_newlines=True)
+	for line in iter(scan.stdout.readline, ""):
+		yield 'data: %s\n\n' % deansi(line)
+	
+	scan.stdout.close()
+	return_code = scan.wait()
+	if return_code != 0:
+		raise CalledProcessError(return_code, cmd)
+
+@app.route("/output", methods=['GET'])
+@cortex.lib.user.login_required
+def get_output():
+	if 'scmd' in request.args:
+		scmd = request.args.get('scmd')
+		s = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
+		try:
+			cmd = s.loads(scmd)
+			return Response(generate(), mimetype="text/event-stream")
+		except:
+			pass
+
+def generate():
+	yield ('output')
 ###########################################################################################
 
 def is_valid_host(host):

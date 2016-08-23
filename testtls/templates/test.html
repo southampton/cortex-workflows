@@ -41,6 +41,15 @@
 	</div>
     </div>
 	{% if styles %}<style>{{styles}}</style>{% endif%}
+	{% if getoutput %}
+	<script>
+		var source = new EventSource('{{ url_for('get_output', scmd=scmd) }}');
+		source.onmessage = function (event) {
+			$("#output").append(event.data + '<br>');
+		};
+	</script>
+	{% endif %}
+	<pre id='output'></pre>
 	{% if output %}<pre>{% for line in output %}{{ line|safe }}{% endfor %}</pre>{% endif %}
 	
 </form>
