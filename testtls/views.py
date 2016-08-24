@@ -126,12 +126,10 @@ def get_output():
 		s = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
 		try:
 			cmd = s.loads(scmd)
-			return Response(generate(), mimetype="text/event-stream")
+			return Response(scan(cmd), mimetype="text/event-stream")
 		except:
 			pass
 
-def generate():
-	yield ('output')
 ###########################################################################################
 
 def is_valid_host(host):
