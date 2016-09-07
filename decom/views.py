@@ -57,10 +57,11 @@ def decom_step2(id):
 
 				vmobj = corpus.vmware_get_vm_by_uuid(system['vmware_uuid'],system['vmware_vcenter'])
 
-				if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
-					actions.append({'id': 'vm.poweroff', 'desc': 'Power off the Virtual Machine', 'detail': 'UUID ' + system['vmware_uuid']})
+				if vmobj:
+					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
+						actions.append({'id': 'vm.poweroff', 'desc': 'Power off the Virtual Machine', 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 			
-				actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine', 'detail': ' UUID ' + system['vmware_uuid']})
+					actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine', 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
 	## Is the system linked to service now?
 	if 'cmdb_id' in system:
@@ -69,10 +70,10 @@ def decom_step2(id):
 
 				if system['cmdb_is_virtual']:
 					if system['cmdb_operational_status'] != u'Deleted':
-						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Deleted in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST']})
+						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Deleted in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
 				else:
 					if system['cmdb_operational_status'] != u'Decommissioned':
-						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Decommissioned in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST']})
+						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Decommissioned in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
 
 	## Ask infoblox if a DNS host object exists for the name of the system
 	try:
@@ -89,23 +90,29 @@ def decom_step2(id):
 	if 'puppet_certname' in system:
 		if system['puppet_certname'] is not None:
 			if len(system['puppet_certname']) > 0:
-				actions.append({'id': 'puppet.cortex.delete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + request.url_root})
-				actions.append({'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + app.config['PUPPET_MASTER']})
+				actions.append({'id': 'puppet.cortex.delete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + request.url_root, 'data': system['id']})
+				actions.append({'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + app.config['PUPPET_MASTER'], 'data': system['puppet_certname']})
 
-	## Check if there is an Active Directory computer object to delete
-	# If systemenv is None, assume 'prod' AD domain
-	if systemenv is None:
-		flash("Warning - Assuming production Active Directory domain","alert-warning")
-		adenv = 'prod'
-	else:
-		adenv = systemenv['id']
+	# We need to check all (unique) AD domains as we register development
+	# Linux boxes to the production domain
+	tested_domains = set()
+	for adenv in app.config['WINRPC']:
+		try:
+			# If we've not tested this CortexWindowsRPC host before
+			if app.config['WINRPC'][adenv]['host'] not in tested_domains:
+				# Add it to the set of tested hosts
+				tested_domains.update([app.config['WINRPC'][adenv]['host']])
 
-	try:
-		if corpus.windows_computer_object_exists(adenv,system['name']):
-			actions.append({'id': 'addelete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + app.config['WINRPC'][adenv]['domain']})
+				# If an AD object exists, append an action to delete it from that environment
+				if corpus.windows_computer_object_exists(adenv, system['name']):
+					actions.append({'id': 'ad.delete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + app.config['WINRPC'][adenv]['domain'], 'data': {'hostname': system['name'], 'env': adenv}})
 
-	except Exception as ex:
-		flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex),"alert-warning")
+		except Exception as ex:
+			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
+
+	# If there are actions to be performed, add on an action to raise a ticket to ESM
+	if len(actions) > 0:
+		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + app.wfsettings[__name__]['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Turn the actions list into a signed JSON document via itsdangerous
 	signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
@@ -126,4 +133,9 @@ def decom_step3(id):
 	except itsdangerous.BadSignature as ex:
 		abort(400)
 
-	return str(actions)
+	# Connect to NeoCortex and start the task
+	neocortex = cortex.lib.core.neocortex_connect()
+	task_id = neocortex.create_task(__name__, session['username'], actions, description="Decommissions a system")
+
+	# Redirect to the status page for the task
+	return redirect(url_for('task_status', id=task_id))
