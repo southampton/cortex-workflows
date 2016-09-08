@@ -1,21 +1,17 @@
 #!/usr/bin/python
 
 from cortex import app
+from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import cortex.lib.classes
-from cortex.lib.user import can_user_access_workflow
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
-@app.workflow_handler(__name__, 'Allocate server', 30, methods=['GET', 'POST'])
-@cortex.lib.user.login_required
-def allocateserver():
-	# Check permissions
-	if not can_user_access_workflow("allocateserver"):
-		abort(403)
+workflow = CortexWorkflow(__name__)
+workflow.add_permission('newserver', 'Create server record')
 
-	# Get workflow settings
-	wfconfig = app.wfsettings[__name__]
+@workflow.route("create",title='Create server record', order=30, permission="newserver", methods=['GET', 'POST'])
+def allocateserver():
 
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)
@@ -27,17 +23,17 @@ def allocateserver():
 	environments = cortex.lib.core.get_cmdb_environments()
 
 	# Get the list of networks
-	networks = wfconfig['NETWORKS']
+	networks = workflow.config['NETWORKS']
 
 	# Get the list of operating systems
-	oses = wfconfig['OPERATING_SYSTEMS']
+	oses = workflow.config['OPERATING_SYSTEMS']
 
 	# Get the list of domains
-	domains = wfconfig['DOMAINS']
+	domains = workflow.config['DOMAINS']
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", title="Allocate new server", classes=server_classes, default_class=wfconfig['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=wfconfig['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=wfconfig['DEFAULT_DOMAIN'])
+		return workflow.render_template("create.html", title="Allocate new server", classes=server_classes, default_class=workflow.config['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=workflow.config['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=workflow.config['DEFAULT_DOMAIN'])
 
 	elif request.method == 'POST':
 		if 'purpose' not in request.form or 'comments' not in request.form or 'class' not in request.form or 'os' not in request.form or 'environment' not in request.form or 'network' not in request.form or 'domain' not in request.form:
@@ -88,7 +84,7 @@ def allocateserver():
 		options['alloc_ip'] = alloc_ip
 		options['is_virtual'] = is_virtual
 		options['task'] = task
-		options['wfconfig'] = wfconfig
+		options['wfconfig'] = workflow.config
 
 		# Populate networking options
 		if alloc_ip:

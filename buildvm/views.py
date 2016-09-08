@@ -1,34 +1,28 @@
 #!/usr/bin/python
 
 from cortex import app
+from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
-from cortex.lib.user import can_user_access_workflow
-import cortex.views
 import datetime
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
+from flask import Flask, request, session, redirect, url_for, flash, g, abort
+
+workflow = CortexWorkflow(__name__)
+workflow.add_permission('buildvm.sandbox', 'Create Sandbox VM')
+workflow.add_permission('buildvm.standard', 'Create Standard VM')
 
 ################################################################################
 ## Sandbox VM Workflow view handler
-
-@app.workflow_handler(__name__, 'Create Sandbox VM', 20, methods=['GET', 'POST'])
-@cortex.lib.user.login_required
+@workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
-	# Check permissions
-	if not can_user_access_workflow("sandbox"):
-		abort(403)
-
 	# Get the list of clusters
 	clusters = cortex.lib.core.vmware_list_clusters("srv01197")
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 
-	# Get the workflow settings
-	wfconfig = app.wfsettings[__name__]
-
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=wfconfig['SB_OS_DISP_NAMES'], os_order=wfconfig['SB_OS_ORDER'])
+		return workflow.render_template(__name__ + "::sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -44,7 +38,7 @@ def sandbox():
 			sendmail = 'send_mail' in request.form
 
 			# Validate the data (common between standard / sandbox)
-			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, wfconfig['OS_ORDER'], [e['id'] for e in environments])
+			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
 
 			return redirect(url_for('sandbox'))
 		except ValueError as e:
@@ -70,7 +64,7 @@ def sandbox():
 		options['comments'] = comments
 		options['expiry'] = expiry
 		options['sendmail'] = sendmail
-		options['wfconfig'] = wfconfig
+		options['wfconfig'] = workflow.config
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
@@ -82,23 +76,15 @@ def sandbox():
 ################################################################################
 ## Standard VM Workflow view handler
 
-@app.workflow_handler(__name__, 'Create Standard VM', 10, methods=['GET','POST'])
-@cortex.lib.user.login_required
+@workflow.route("standard",title='Create Standard VM', order=10, permission="buildvm.standard", methods=['GET', 'POST'])
 def standard():
-	# Check permissions
-	if not can_user_access_workflow("standard"):
-		abort(403)
-
-	# Get the workflow settings
-	wfconfig = app.wfsettings[__name__]
-
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters("srv00080")
 
 	# Exclude any clusters that the config asks to:
 	clusters = []
 	for cluster in all_clusters:
-		if cluster['name'] not in wfconfig['HIDE_CLUSTERS']:
+		if cluster['name'] not in workflow.config['HIDE_CLUSTERS']:
 			clusters.append(cluster)
 
 	# Get the list of environments
@@ -106,7 +92,7 @@ def standard():
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::standard.html", clusters=clusters, environments=environments, os_names=wfconfig['OS_DISP_NAMES'], os_order=wfconfig['OS_ORDER'], title="Create Standard Virtual Machine")
+		return workflow.render_template(__name__ + "::standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -124,7 +110,7 @@ def standard():
 			sendmail = 'send_mail' in request.form
 
 			# Validate the data (common between standard / sandbox)
-			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, wfconfig['OS_ORDER'], [e['id'] for e in environments])
+			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
 
 			# Validate cluster against the list we've got
 			if cluster not in [c['name'] for c in clusters]:
@@ -152,7 +138,7 @@ def standard():
 		options['purpose'] = purpose
 		options['comments'] = comments
 		options['sendmail'] = sendmail
-		options['wfconfig'] = wfconfig
+		options['wfconfig'] = workflow.config
 		options['expiry'] = expiry
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']

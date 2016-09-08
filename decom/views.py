@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
+from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import cortex.lib.systems
 from cortex.corpus import Corpus
@@ -8,20 +9,21 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 from pyVmomi import vim
 from itsdangerous import JSONWebSignatureSerializer
 
-# Check if an AD object exists
-## Delete it
+workflow = CortexWorkflow(__name__)
+workflow.add_permission('systems.all.decom', 'Decommission any system')
+workflow.add_system_permission('decom', 'Decommission system')
 
-@app.workflow_handler(__name__, 'Decommission', workflow_type=app.WF_SYSTEM_ACTION, workflow_desc="Begins the process of decommissioning this system.")
-@cortex.lib.user.login_required
+
+
+@workflow.action("prepare",title='Decommission', desc="Begins the process of decommissioning this system", system_permission="decom", permission="systems.all.decom")
 def decom_step1(id):
 	system = cortex.lib.systems.get_system_by_id(id)
 	if system is None:
 		abort(404)
 	
-	return render_template(__name__ + "::step1.html", system=system, title="Decommission Node")
+	return workflow.render_template("step1.html", system=system, title="Decommission system")
 
-@app.workflow_route("/<int:id>")
-@cortex.lib.user.login_required
+@workflow.action("check",title='Decomission', system_permission="decom", permission="systems.all.decom",menu=False)
 def decom_step2(id):
 	# in this step we work out what steps to perform
 	# then we load this into a list of steps, each step being a dictionary
@@ -112,16 +114,15 @@ def decom_step2(id):
 
 	# If there are actions to be performed, add on an action to raise a ticket to ESM
 	if len(actions) > 0:
-		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + app.wfsettings[__name__]['TICKET_TEAM'], 'data': {'hostname': system['name']}})
+		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Turn the actions list into a signed JSON document via itsdangerous
 	signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
 	json_data = signer.dumps(actions)
 
-	return render_template(__name__ + "::step2.html", actions=actions, system=system, json_data=json_data, title="Decommission Node")
+	return workflow.render_template("step2.html", actions=actions, system=system, json_data=json_data, title="Decommission Node")
 
-@app.workflow_route("/<int:id>",methods=['GET','POST'])
-@cortex.lib.user.login_required
+@workflow.action("start",title='Decomission', system_permission="decom", permission="systems.all.decom", menu=False, methods=['POST'])
 def decom_step3(id):
 	## Get the actions list 
 	actions_data = request.form['actions']
