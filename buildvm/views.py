@@ -22,7 +22,7 @@ def sandbox():
 
 	if request.method == 'GET':
 		## Show form
-		return workflow.render_template(__name__ + "::sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
+		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -92,7 +92,7 @@ def standard():
 
 	if request.method == 'GET':
 		## Show form
-		return workflow.render_template(__name__ + "::standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], title="Create Standard Virtual Machine")
+		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
