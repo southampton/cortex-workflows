@@ -1,8 +1,9 @@
 import requests
 
-def run(helper, actions):
+def run(helper, options):
+
 	# Iterate over the actions that we have to perform
-	for action in actions:
+	for action in options['actions']:
 		# Start the event
 		helper.event(action['id'], action['desc'])
 
@@ -21,7 +22,7 @@ def run(helper, actions):
 		elif action['id'] == "ad.delete":
 			r = action_ad_delete(action, helper)
 		elif action['id'] == "ticket.ops":
-			r = action_ticket_ops(action, helper)
+			r = action_ticket_ops(action, helper, options['wfconfig'])
 
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
@@ -146,7 +147,7 @@ def action_ad_delete(action, helper):
 
 ################################################################################
 
-def action_ticket_ops(action, helper):
+def action_ticket_ops(action, helper, wfconfig):
 	try:
 		short_desc = "Finish manual decommissioning steps of " + action['data']['hostname']
 		message  = 'Cortex has decommissioned the system ' + action['data']['hostname'] + '.\n\n'
@@ -155,7 +156,7 @@ def action_ticket_ops(action, helper):
 		message += ' - Remove any associated perimeter firewall rules\n'
 		message += ' - Remove the system from backups\n'
 
-		helper.lib.servicenow_create_ticket(short_desc, message, helper.config['TICKET_OPENER_SYS_ID'], helper.config['TICKET_TEAM'])
+		helper.lib.servicenow_create_ticket(short_desc, message, wfconfig['TICKET_OPENER_SYS_ID'], wfconfig['TICKET_TEAM'])
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to raise ticket: " + str(e))

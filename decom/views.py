@@ -112,8 +112,8 @@ def decom_step2(id):
 		except Exception as ex:
 			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
 
-	# If there are actions to be performed, add on an action to raise a ticket to ESM
-	if len(actions) > 0:
+	# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
+	if len(actions) > 0 and system['class'] == "play":
 		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Turn the actions list into a signed JSON document via itsdangerous
@@ -134,9 +134,14 @@ def decom_step3(id):
 	except itsdangerous.BadSignature as ex:
 		abort(400)
 
+	# Build the options to send on to the task
+	options = {}
+	options['actions'] = actions
+	options['wfconfig'] = workflow.config
+	
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
-	task_id = neocortex.create_task(__name__, session['username'], actions, description="Decommissions a system")
+	task_id = neocortex.create_task(__name__, session['username'], options, description="Decommissions a system")
 
 	# Redirect to the status page for the task
 	return redirect(url_for('task_status', id=task_id))
