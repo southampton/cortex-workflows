@@ -113,7 +113,7 @@ def decom_step2(id):
 			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
 
 	# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
-	if len(actions) > 0 and system['class'] == "play":
+	if len(actions) > 0 and system['class'] != "play":
 		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Turn the actions list into a signed JSON document via itsdangerous
