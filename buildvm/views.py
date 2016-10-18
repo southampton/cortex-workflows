@@ -40,7 +40,6 @@ def sandbox():
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
 
-			return redirect(url_for('sandbox'))
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
 			return redirect(url_for('sandbox'))
