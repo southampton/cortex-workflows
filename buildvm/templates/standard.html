@@ -66,7 +66,7 @@ div.specdetails
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter request details</h4>
 			<div class="form-group col-md-3">
-				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456 or PRJTASK0987654" autofocus />
+				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
 			</div>
 			<div class="form-group col-md-9">
 				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
@@ -345,12 +345,12 @@ $('#create').click(function(e) {
 	// Validate
 	if ($("#task").val().length == 0)
 	{
-		alert('You must enter a ServiceNow task number, e.g. INCTASK0123456 or PRJTASK0012345.\nNote that this cannot be an ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#task').focus();
 	}
-	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC))TASK[0-9]+[ \t]*/) == null)
+	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C))TASK[0-9]+[ \t]*/) == null)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456 or PRJTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#task').focus();
 	}
 	else if ($('#purpose').val().length == 0)
