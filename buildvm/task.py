@@ -30,7 +30,6 @@ def run(helper, options):
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
-		expiry = None
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -48,7 +47,6 @@ def run(helper, options):
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
-		expiry = options['expiry']
 
 	## Allocate a hostname #################################################
 
@@ -56,7 +54,7 @@ def run(helper, options):
 	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
 	# Allocate the name
-	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=expiry)
+	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
 
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info.keys()[0]
