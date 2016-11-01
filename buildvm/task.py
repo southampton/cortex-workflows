@@ -408,18 +408,19 @@ def run(helper, options):
 	message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
 	message += '\n'
 	if workflow == 'standard':
-		message += 'ServiceNow Task: ' + options['task'] + '\n'
-	message += 'Hostname: ' + system_name + '.' + domain + '\n'
-	message += 'IP Address: ' + ipv4addr + '\n'
-	message += 'VMware Cluster: ' + options['cluster'] + '\n'
-	message += 'Purpose: ' + options['purpose'] + '\n'
-	message += 'Operating System: ' + os_name + '\n'
+		message += 'ServiceNow Task: ' + str(options['task']) + '\n'
+	message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+	if ipv4addr is not None:
+		message += 'IP Address: ' + str(ipv4addr) + '\n'
+	message += 'VMware Cluster: ' + str(options['cluster']) + '\n'
+	message += 'Purpose: ' + str(options['purpose']) + '\n'
+	message += 'Operating System: ' + str(os_name) + '\n'
 	message += 'CPUs: ' + str(total_cpu) + '\n'
 	message += 'RAM: ' + str(options['ram']) + ' GiB\n'
 	message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
 	message += '\n'
-	message += 'The event log for the task can be found at https://' + helper.config['CORTEX_DOMAIN'] + '/task/status/' + str(helper.task_id) + '\n'
-	message += 'More information about the VM, can be found on the Cortex systems page at https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system_dbid) + '\n'
+	message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
+	message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
 	if sys_id is not None:
 		message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
 	else:
@@ -432,9 +433,9 @@ def run(helper, options):
 
 	# Send the message to the user who started the task (if they want it)
 	if options['sendmail']:
-		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + system_name, message)
+		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + str(system_name), message)
 
 	# For standard VMs only, always notify people in the notify_emails list
 	if workflow == 'standard':
 		for email in notify_emails: 
-			helper.lib.send_email(email, 'Cortex has finished building a VM, ' + system_name, message)
+			helper.lib.send_email(email, 'Cortex has finished building a VM, ' + str(system_name), message)
