@@ -101,7 +101,7 @@ def run(helper, options):
 		vm_spec = None
 
 	# For Server 2012R2
-	elif options['template'] == 'windows_server_2012':
+	elif options['template'] == 'windows_server_2012' or options['template'] == 'windows_server_2016' or options['template'] == 'windows_server_2016_core':
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 
 		# Build a customisation spec depending on the environment to use the correct domain details

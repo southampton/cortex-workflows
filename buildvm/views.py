@@ -38,7 +38,7 @@ def sandbox():
 			sendmail = 'send_mail' in request.form
 
 			# Validate the data (common between standard / sandbox)
-			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
+			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
 
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
