@@ -15,11 +15,12 @@
 {%endfor%}
 </ul>
 
+<p class="lead text-center">You are about to decommission <strong>{{system.name}}</strong>, whose description is <strong>{{system.allocation_comment}}</strong>, and is in the <strong{% if system.cmdb_environment|lower == "production" %} class="text-danger"{% elif system.cmdb_environment|lower == "pre-production" or system.cmdb_environment == "preproduction" %} class="text-warning"{% endif %}>{{system.cmdb_environment}}</strong> environment. It was created on <strong>{{system.allocation_date}}</strong>.<br />If this is correct, click the Decommission button below to confirm and start the decommission process.</p>
 <form role="form" action="{{ url_for('decom_step3',id=system['id']) }}" method="POST">
 	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 	<input name="actions" type="hidden" value="{{json_data}}"/>
 	<div class="text-center">
-		<input class="btn btn-primary btn-lg" type="submit" name="submit" value="Decommission"/>
+		<input class="btn btn-danger btn-lg" type="submit" name="submit" value="Decommission"/>
 	</div>
 </form>
 
