@@ -61,9 +61,9 @@ def decom_step2(id):
 
 				if vmobj:
 					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
-						actions.append({'id': 'vm.poweroff', 'desc': 'Power off the Virtual Machine', 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+						actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system['name'], 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 			
-					actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine', 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+					actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system['name'], 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
 	## Is the system linked to service now?
 	if 'cmdb_id' in system:
@@ -83,7 +83,7 @@ def decom_step2(id):
 
 		if refs is not None:
 			for ref in refs:
-				actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ', 'detail': 'Delete the name ' + system['name'] + '.soton.ac.uk - Infoblox reference: ' + ref, 'data': ref})
+				actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.soton.ac.uk - Infoblox reference: ' + ref, 'data': ref})
 
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with Infoblox: " + str(type(ex)) + " - " + str(ex),"alert-warning")
