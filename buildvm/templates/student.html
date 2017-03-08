@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.0.5/css/bootstrap-slider.min.css">
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.0.5/bootstrap-slider.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>        
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script>                
+		<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+{% endblock %}
+{% block body %}
+
+<div class="page-header">
+<h3><i class="fa fa-plus-circle fa-fw"></i> Request Virtual Machine</h3>
+<p class="text-muted">This workflow will request a new virtual machine.</p>
+</div>
+
+<style type="text/css">
+.blocks .btn
+{
+	width: 2.5em;
+}
+
+.btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
+{
+	opacity: 0.7;
+	font-size: 14px;
+}
+
+.active
+{
+	opacity: 1 !important;
+}
+
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+
+div.specname
+{
+	font-size: 200%; /* Relative to btn-primary */
+	float:left;
+	line-height: 90%;
+	padding-right: 0.4em;
+}
+
+div.specdetails
+{
+	float:left;
+	text-align: left
+}
+</style>
+
+<form method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-6">
+			<h4>What you will get:</h4>
+			<p>A VM will be with the following specifications:</p>
+			<dl>
+				<dt><strong>vCPUs:</strong></dt><dd>4</dd>
+				<dt><strong>Memory:</strong></dt><dd>4 GiB</dd>
+				<dt><strong>Disk:</strong></dt><dd>50 GiB</dd>
+			</dl>
+		</div>
+		<div class="col-md-6">
+			<h4>What you won't:</h4>
+			<ul>
+				<li>Backups</li>
+			</ul>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<h4>1. Enter request details</h4>
+			<div class="form-group col-md-12">
+				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6">
+			<h4>2. Choose Image</h4>
+			<select class="col-md-12 selectpicker" name="template" id="template">
+				<option></option>
+{% for os in os_order -%}
+				<option value="{{ os }}">{{ os_names[os] }}</option>
+{%- endfor %}
+			</select>
+		</div>
+
+{#- Commenting this out for now as we only have one cluster
+			<h4 style="margin-top:2.2em">6. Choose Location Cluster</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="cluster" id="cluster">
+					<option></option>
+{% for cluster in clusters -%}
+					<option value="{{ cluster.name }}"{% if default_cluster == cluster.name %} selected="selected"{% endif %}>{{cluster.name}}</option>
+{%- endfor %}
+				</select>
+			</div>
+#}
+		<div class="col-md-6">
+			<h4>3. External Access</h4>
+			<fieldset>
+				<label for="internal"><input type="radio" class="radio" id="internal" name="dmz" value="internal" checked></input>Internal</label>
+				<label for="external"><input type="radio" class="radio" id="external" name="dmz" value="external"></input>External</label>
+			</fieldset>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6">
+			<h4>4. Expiry date</h4>
+			<div style="margin-left: 1em">
+				<p>Set the date that this VM will be automatically powered off.</p>
+				<div class='input-group date' id='expirypicker'>
+					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" />
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+				<script>
+					$(function () {
+						$('#expirypicker').datetimepicker({
+							viewMode: 'days',
+							format: 'YYYY-MM-DD',
+							minDate: moment(),
+							useCurrent: false,
+							defaultDate: moment().add(1, 'years'),
+
+						});
+					});
+				</script>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<h4>5. Create</h4>
+			<div class="col-md-12">
+				<input type="checkbox" name="send_mail" id="send_mail" checked="checked"></input><label for="send_mail">Notify me by e-mail when done</label>
+			</div>
+			<div class="col-md-12">
+				<button type="submit" class="btn btn-success btn-submit" id="create"><i class="fa fa-fw fa-send"></i> Request</button>
+			</div>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+
+{# Callback for clicking Create button #}
+$('#create').click(function(e) {
+	// Validate
+	if ($('#purpose').val().length == 0)
+	{
+		alert('You must enter a purpose for the VM.');
+		$('#purpose').focus();
+	}
+	else if ($("#template").val() == "")
+	{
+		alert('You must select a VM image to use.');
+	}
+	else if ($("#environment").val() == "")
+	{
+		alert('You must select an environment.');
+	}
+	else if ($("#cluster").val() == "")
+	{
+		alert('You must select a location cluster.');
+	}
+	else
+	{
+		return true;
+	}
+
+	{#We've hit an error condition, don't allow the form to submit#}
+	e.preventDefault();
+	return false;
+});
+</script>
+{% endblock %}
