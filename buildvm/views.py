@@ -163,12 +163,12 @@ def student():
 	environments = cortex.lib.core.get_cmdb_environments()
 
 	if request.method == 'GET':
-		## Show form
-		return workflow.render_template("student.html", clusters=clusters, environments=environments, title="Create Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
+		# Show form
+		return workflow.render_template("student.html", title="Create Virtual Machine", os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
-		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'environment' not in request.form:
+		if not {'template', 'network', 'expiry'}.issubset(request.form):
 			flash('You must select options for all questions before creating', 'alert-danger')
 			return redirect(url_for('student'))
 		
@@ -181,6 +181,19 @@ def student():
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
+			
+			if template not in templates:
+				raise ValueError('Invalid template selected')
+
+			if 'expiry' in r.form and r.form['expiry'] is not None and len(r.form['expiry'].strip()) > 0:
+				expiry = r.form['expiry']
+				try:
+					expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
+					if expiry < datetime.now():
+						raise ValueError('Expiry date cannot be in the past')
+				except Exception, e:
+					raise ValueError('Expiry date must be specified in YYYY-MM-DD format')
+			
 
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
@@ -193,14 +206,14 @@ def student():
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'student'
-		options['sockets'] = sockets
-		options['cores'] = cores
-		options['ram'] = ram
-		options['disk'] = disk
+		options['sockets'] = 1
+		options['cores'] = 4
+		options['ram'] = 4
+		options['disk'] = 50
 		options['template'] = template
 		#options['cluster'] = cluster	## Commenting out whilst we only have one cluster
 		options['cluster'] = 'CHARTREUSE'
-		options['env'] = env
+		options['env'] = 'prod'
 		options['purpose'] = purpose
 		options['comments'] = comments
 		options['expiry'] = expiry
