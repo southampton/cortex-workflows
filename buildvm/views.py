@@ -164,7 +164,7 @@ def student():
 
 	if request.method == 'GET':
 		# Show form
-		return workflow.render_template("student.html", title="Create Virtual Machine", os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
+		return workflow.render_template("student.html", title="Create Virtual Machine", os_names=workflow.config['STU_OS_DISP_NAMES'], os_order=workflow.config['STU_OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -179,20 +179,16 @@ def student():
 			comments = request.form['comments']
 			sendmail = 'send_mail' in request.form
 
-			# Validate the data (common between standard / sandbox)
-			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
-			
-			if template not in templates:
-				raise ValueError('Invalid template selected')
+			if template not in workflow.config['STU_OS_ORDER']:
+				raise ValueError('Invalid image selected')
 
-			if 'expiry' in r.form and r.form['expiry'] is not None and len(r.form['expiry'].strip()) > 0:
-				expiry = r.form['expiry']
-				try:
-					expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
-					if expiry < datetime.now():
-						raise ValueError('Expiry date cannot be in the past')
-				except Exception, e:
-					raise ValueError('Expiry date must be specified in YYYY-MM-DD format')
+			if network not in workflow.config['STU_NETWORK_ORDER']:
+				raise ValueError('Invalid network selected')
+
+			expiry = request.form['expiry']
+			expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
+			if expiry < datetime.now():
+				raise ValueError('Expiry date cannot be in the past')
 			
 
 		except ValueError as e:
@@ -209,8 +205,8 @@ def student():
 		options['sockets'] = 1
 		options['cores'] = 4
 		options['ram'] = 4
-		options['disk'] = 50
 		options['template'] = template
+		options['network'] = workflow.config['STU_NETWORK_NAMES'][network]
 		#options['cluster'] = cluster	## Commenting out whilst we only have one cluster
 		options['cluster'] = 'CHARTREUSE'
 		options['env'] = 'prod'
@@ -220,9 +216,20 @@ def student():
 		options['sendmail'] = sendmail
 		options['wfconfig'] = workflow.config
 
+		# Check if manual approval is required
+		## They have too many VMs, the VM is to be public facing or is set to expire in over a year
+
+		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network = 'external' or expiry > datetime.datetime.now() + datetime.timedelta(days=365):
+
+
+			flash('Your request could not be completed automatically and is awaiting human approval', 'alert-warning')
+			return redirect(url_for('dashboard'))
+
+
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (student VMware environment)")
+
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))

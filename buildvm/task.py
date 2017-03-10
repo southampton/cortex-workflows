@@ -47,6 +47,23 @@ def run(helper, options):
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
+	elif workflow == 'student':
+		prefix = options['wfconfig']['STU_PREFIX']
+		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
+		domain = options['wfconfig']['STU_DOMAIN']
+		puppet_cert_domain = options['wfconfig']['STU_PUPPET_CERT_DOMAIN']
+		win_full_name = options['wfconfig']['STU_WIN_FULL_NAME']
+		win_org_name = options['wfconfig']['STU_WIN_ORG_NAME']
+		win_location = options['wfconfig']['STU_WIN_LOCATION']
+		win_os_domain = options['wfconfig']['STU_WIN_OS_DOMAIN']
+		win_dev_os_domain = options['wfconfig']['STU_WIN_DEV_OS_DOMAIN']
+		sn_location = options['wfconfig']['STU_SN_LOCATION']
+		network_name = options['network']
+		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
+		win_groups = options['wfconfig']['STU_WIN_GROUPS']
+		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
+		os_names = options['wfconfig']['STU_OS_NAMES']
+		os_disks = options['wfconfig']['STU_OS_DISKS']
 
 	## Allocate a hostname #################################################
 
@@ -96,7 +113,7 @@ def run(helper, options):
 	os_disk_size =  os_disks[options['template']]
 
 	# For RHEL6 or RHEL7:
-	if options['template'] == 'rhel6' or options['template'] == 'rhel7' or options['template'] == 'rhel6c':
+	if options['template'] in ['rhel6', 'rhel7', 'rhel6c', 'ubuntu_14.04_lts']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		vm_spec = None
 
