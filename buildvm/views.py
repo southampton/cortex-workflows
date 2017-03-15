@@ -5,6 +5,7 @@ from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
+import MySQLdb as mysql
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('buildvm.sandbox', 'Create Sandbox VM')
@@ -177,6 +178,9 @@ def student():
 			# Extract all the parameters
 			purpose  = request.form['purpose']
 			comments = request.form['comments']
+			template = request.form['template']
+			network  = request.form['network']
+			expiry = request.form['expiry']
 			sendmail = 'send_mail' in request.form
 
 			if template not in workflow.config['STU_OS_ORDER']:
@@ -185,9 +189,8 @@ def student():
 			if network not in workflow.config['STU_NETWORK_ORDER']:
 				raise ValueError('Invalid network selected')
 
-			expiry = request.form['expiry']
 			expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
-			if expiry < datetime.now():
+			if expiry < datetime.datetime.utcnow():
 				raise ValueError('Expiry date cannot be in the past')
 			
 
@@ -207,7 +210,7 @@ def student():
 		options['ram'] = 4
 		options['template'] = template
 		options['network'] = workflow.config['STU_NETWORK_NAMES'][network]
-		#options['cluster'] = cluster	## Commenting out whilst we only have one cluster
+		#options['cluster'] = cluster	## Commenting out while we only have one cluster
 		options['cluster'] = 'CHARTREUSE'
 		options['env'] = 'prod'
 		options['purpose'] = purpose
@@ -219,20 +222,30 @@ def student():
 		# Check if manual approval is required
 		## They have too many VMs, the VM is to be public facing or is set to expire in over a year
 
-		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network = 'external' or expiry > datetime.datetime.now() + datetime.timedelta(days=365):
+		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network == 'external' or expiry > datetime.datetime.utcnow() + datetime.timedelta(days=366):
+			try:
+				curd = g.db.cursor(mysql.cursors.DictCursor)
+				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `workflow`, `sockets`, `cores`, `ram`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+				params = (datetime.datetime.utcnow(), session['username'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0)
+				curd.execute(sql, params)
 
+				g.db.commit()
 
-			flash('Your request could not be completed automatically and is awaiting human approval', 'alert-warning')
+				flash('Your request could not be completed automatically and is awaiting human approval', 'alert-warning')
+			except mysql.Error as e:
+				flash('An internal error occurred and your request could not be processed', 'alert-warning')
+
 			return redirect(url_for('dashboard'))
 
 
 		# Connect to NeoCortex and start the task
-		neocortex = cortex.lib.core.neocortex_connect()
-		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (student VMware environment)")
+		#neocortex = cortex.lib.core.neocortex_connect()
+		#task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (student VMware environment)")
 
 
 		# Redirect to the status page for the task
-		return redirect(url_for('task_status', id=task_id))
+		return redirect(url_for('dashboard'))
+		#return redirect(url_for('task_status', id=task_id))
 
 ################################################################################
 ## Common data validation / form extraction

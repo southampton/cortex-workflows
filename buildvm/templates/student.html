@@ -18,10 +18,6 @@
 </div>
 
 <style type="text/css">
-.blocks .btn
-{
-	width: 2.5em;
-}
 
 .btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
 {
@@ -45,37 +41,33 @@
 	font-size: 2em;
 }
 
-div.specname
+.warning
 {
-	font-size: 200%; /* Relative to btn-primary */
-	float:left;
-	line-height: 90%;
-	padding-right: 0.4em;
+	display:none;
 }
 
-div.specdetails
-{
-	float:left;
-	text-align: left
-}
 </style>
 
 <form method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
 		<div class="col-md-6">
-			<h4>What you will get:</h4>
-			<p>A VM will be with the following specifications:</p>
-			<dl>
-				<dt><strong>vCPUs:</strong></dt><dd>4</dd>
-				<dt><strong>Memory:</strong></dt><dd>4 GiB</dd>
-				<dt><strong>Disk:</strong></dt><dd>50 GiB</dd>
-			</dl>
+			<p class="lead">As a member of ECS you are able to request Virtual Machines (VMs)</p>
+			<p>Please remember that you are bound by the <a href="http://www.calendar.soton.ac.uk/sectionIV/computers.html">University's regulations</a>. Any illegal or improper use of your VM will result in it being removed without warning and may result in disciplinary action.</p>
+			<p>Members of ORC or Physics and Astronomy should contact the iSolutions Business Relationship Manager for FPSE, <a href="mailto:J.P.Webb@soton.ac.uk">Jeremy Webb</a>.</p>
+			<p>ECS staff and researchers needing virtual machines (VMs) for funded projects should contact the Faculty Research Systems Manager, <a href="mailto:fpse-rsm@soton.ac.uk">Lance Draper</a>.</p>
 		</div>
 		<div class="col-md-6">
+			<h4>What you will get:</h4>
+			<p>A VM with the following specifications:</p>
+			<ul>
+				<li><strong>vCPUs:</strong> 4</li>
+				<li><strong>Memory:</strong> 4 GiB</li>
+				<li><strong>Disk:</strong> 50 GiB</li>
+			</ul>
 			<h4>What you won't:</h4>
 			<ul>
-				<li>Backups</li>
+				<li>Backups. If VM backups <em>are</em> required, contact <a href="mailto:fpse-rsm@soton.ac.uk">Lance Draper</a>.</li>
 			</ul>
 		</div>
 	</div>
@@ -83,7 +75,7 @@ div.specdetails
 		<div class="col-md-12">
 			<h4>1. Enter request details</h4>
 			<div class="form-group col-md-12">
-				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
+				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. SMTP server" autofocus />
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes about the system" />
 			</div>
 		</div>
@@ -113,10 +105,21 @@ div.specdetails
 #}
 		<div class="col-md-6">
 			<h4>3. Network Zone</h4>
-			<fieldset>
-				<label for="internal"><input type="radio" class="radio" id="internal" name="network" value="internal" checked></input>Internal</label>
-				<label for="external"><input type="radio" class="radio" id="external" name="network" value="external"></input>External</label>
+			<fieldset id="networks">
+				<div class="col-md-6 row">
+				<label class="col-md-12" for="internal"><input type="radio" class="radio" id="internal" name="network" value="internal" checked></input>
+					<h4>Internal</h4>
+					<p>The VM will only be accessible from inside the ECS network. It may still be accessed using the ECS VPN.</p>
+				</label>
+				</div>
+				<div class="col-md-6 row">
+				<label class="col-md-12" for="external"><input type="radio" class="radio" id="external" name="network" value="external"></input>
+					<h4>External</h4>
+					<p>The VM will be directly accessible from the Internet.</p>
+				</label>
+				</div>
 			</fieldset>
+			<div id="networkwarning" class="warning alert col-md-12 alert-warning">VMs on the external network require human approval</div>
 		</div>
 	</div>
 
@@ -124,13 +127,14 @@ div.specdetails
 		<div class="col-md-6">
 			<h4>4. Expiry date</h4>
 			<div class="col-md-12">
-				<p>Set the date that this VM will be automatically powered off</p>
+				<p>Set the date that this VM will be automatically destroyed. This should usually be under one year.</p>
 				<div class='input-group date' id='expirypicker'>
 					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" required></input>
 					<span class="input-group-addon">
 						<span class="glyphicon glyphicon-calendar"></span>
 					</span>
 				</div>
+				<div id="expirywarning" class="warning alert col-md-12 alert-warning">Selecting an expiry over one year in advance will require human approval</div>
 				<script>
 					$(function () {
 						$('#expirypicker').datetimepicker({
@@ -140,6 +144,12 @@ div.specdetails
 							useCurrent: false,
 							defaultDate: moment().add(365, 'days'),
 
+						}).on('dp.change', function(e) {
+							if (e.date > moment().add(366, 'days')){
+								$('#expirywarning').show();
+							} else {
+								$('#expirywarning').hide();
+							}
 						});
 					});
 				</script>
@@ -157,6 +167,14 @@ div.specdetails
 	</div>
 </form>
 <script type="text/javascript">
+
+$('input:radio[name="network"]').change(function(){
+	if ($(this).val() !== 'internal') {
+		$('#networkwarning').show();
+	} else {
+		$('#networkwarning').hide();
+	}
+});
 
 {# Callback for clicking Create button #}
 $('#create').click(function(e) {
