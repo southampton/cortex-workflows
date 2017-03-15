@@ -208,8 +208,9 @@ def student():
 		options['sockets'] = 1
 		options['cores'] = 4
 		options['ram'] = 4
+		options['disk'] = 0
 		options['template'] = template
-		options['network'] = workflow.config['STU_NETWORK_NAMES'][network]
+		options['network'] = network
 		#options['cluster'] = cluster	## Commenting out while we only have one cluster
 		options['cluster'] = 'CHARTREUSE'
 		options['env'] = 'prod'
@@ -225,8 +226,8 @@ def student():
 		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network == 'external' or expiry > datetime.datetime.utcnow() + datetime.timedelta(days=366):
 			try:
 				curd = g.db.cursor(mysql.cursors.DictCursor)
-				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `workflow`, `sockets`, `cores`, `ram`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-				params = (datetime.datetime.utcnow(), session['username'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0)
+				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+				params = (datetime.datetime.utcnow(), session['username'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0)
 				curd.execute(sql, params)
 
 				g.db.commit()
