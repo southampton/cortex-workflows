@@ -6,6 +6,8 @@ import cortex.lib.core
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
 import MySQLdb as mysql
+import re
+from cortex.corpus import Corpus
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('buildvm.sandbox', 'Create Sandbox VM')
@@ -158,7 +160,7 @@ def standard():
 @workflow.route("student", title='Create Student VM', order=30, permission="buildvm.student", methods=['GET', 'POST'])
 def student():
 	# Get the list of clusters
-	clusters = cortex.lib.core.vmware_list_clusters("srv01197")
+	clusters = cortex.lib.core.vmware_list_clusters("srv00080")
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
@@ -176,12 +178,28 @@ def student():
 		# Form validation
 		try:
 			# Extract all the parameters
+			host_suffix = request.form['fqdn']
 			purpose  = request.form['purpose']
 			comments = request.form['comments']
 			template = request.form['template']
 			network  = request.form['network']
 			expiry = request.form['expiry']
 			sendmail = 'send_mail' in request.form
+
+			# Check name is RFC1123 complient
+			if not re.compile(r"^[a-z0-9\-]{1,32}$").match(host_suffix):
+				raise ValueError('Invalid hostname suffix')
+
+			if not re.compile(r"^[a-z0-9\-]{1,16}$").match(session['username']):
+				raise Exception('Username contains incompatible characters')
+
+			fqdn = 'svm-' + session['username'] + '-' + host_suffix + '.ecs.soton.ac.uk'
+
+			# load corpus
+			corpus = Corpus(g.db, app.config)
+			# ensure name is not in use
+			if corpus.infoblox_get_host_refs(fqdn) is not None:
+				raise ValueError('FQDN "' + fqdn + '" appears to have zone records already. Try a different suffix."')
 
 			if template not in workflow.config['STU_OS_ORDER']:
 				raise ValueError('Invalid image selected')
@@ -192,7 +210,6 @@ def student():
 			expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
 			if expiry < datetime.datetime.utcnow():
 				raise ValueError('Expiry date cannot be in the past')
-			
 
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
@@ -214,11 +231,11 @@ def student():
 		#options['cluster'] = cluster	## Commenting out while we only have one cluster
 		options['cluster'] = 'CHARTREUSE'
 		options['env'] = 'prod'
+		options['fqdn'] = fqdn
 		options['purpose'] = purpose
 		options['comments'] = comments
 		options['expiry'] = expiry
 		options['sendmail'] = sendmail
-		options['wfconfig'] = workflow.config
 
 		# Check if manual approval is required
 		## They have too many VMs, the VM is to be public facing or is set to expire in over a year
@@ -226,8 +243,8 @@ def student():
 		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network == 'external' or expiry > datetime.datetime.utcnow() + datetime.timedelta(days=366):
 			try:
 				curd = g.db.cursor(mysql.cursors.DictCursor)
-				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-				params = (datetime.datetime.utcnow(), session['username'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0)
+				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `fqdn`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`, `updated_at`, `updated_who`) VALUES (NOW(), %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
+				params = ( session['username'], options['fqdn'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0, session['username'])
 				curd.execute(sql, params)
 
 				g.db.commit()
@@ -239,14 +256,19 @@ def student():
 			return redirect(url_for('dashboard'))
 
 
-		# Connect to NeoCortex and start the task
-		#neocortex = cortex.lib.core.neocortex_connect()
-		#task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (student VMware environment)")
 
 
 		# Redirect to the status page for the task
 		return redirect(url_for('dashboard'))
-		#return redirect(url_for('task_status', id=task_id))
+		#return redirect(url_for('task_status', id=start_task(options)))
+
+################################################################################
+def start_task(options):
+	options['wfconfig'] = workflow.config
+	# Connect to NeoCortex and start the task
+	neocortex = cortex.lib.core.neocortex_connect()
+	return neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
+
 
 ################################################################################
 ## Common data validation / form extraction

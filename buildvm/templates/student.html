@@ -75,6 +75,12 @@
 		<div class="col-md-12">
 			<h4>1. Enter request details</h4>
 			<div class="form-group col-md-12">
+				<label for="fqdn">FQDN:</label>
+				<div class="input-group">
+					<div class="input-group-addon">svm-{{ session.username }}-</div>
+					<input class="form-control" id="fqdn" name="fqdn" placeholder="The hostname suffix of this Virtual Machine (1 to 32 characters long of 'a-z', '0-9' and '-'). Example: 'myfirstserver'." pattern="[a-z0-9\-]{1,32}" required autofocus />
+					<div class="input-group-addon">.ecs.soton.ac.uk</div>
+				</div>
 				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. SMTP server" autofocus />
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes about the system" />
 			</div>
@@ -92,17 +98,6 @@
 			</select>
 		</div>
 
-{#- Commenting this out for now as we only have one cluster
-			<h4 style="margin-top:2.2em">6. Choose Location Cluster</h4>
-			<div style="margin-left:1em">
-				<select class="selectpicker" name="cluster" id="cluster">
-					<option></option>
-{% for cluster in clusters -%}
-					<option value="{{ cluster.name }}"{% if default_cluster == cluster.name %} selected="selected"{% endif %}>{{cluster.name}}</option>
-{%- endfor %}
-				</select>
-			</div>
-#}
 		<div class="col-md-6">
 			<h4>3. Network Zone</h4>
 			<fieldset id="networks">

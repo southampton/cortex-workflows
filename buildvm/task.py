@@ -30,6 +30,7 @@ def run(helper, options):
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
+		vm_folder_name = None
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -47,11 +48,11 @@ def run(helper, options):
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
+		vm_folder_name = None
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
 		domain = options['wfconfig']['STU_DOMAIN']
-		puppet_cert_domain = options['wfconfig']['STU_PUPPET_CERT_DOMAIN']
 		win_full_name = options['wfconfig']['STU_WIN_FULL_NAME']
 		win_org_name = options['wfconfig']['STU_WIN_ORG_NAME']
 		win_location = options['wfconfig']['STU_WIN_LOCATION']
@@ -64,6 +65,7 @@ def run(helper, options):
 		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
 		os_names = options['wfconfig']['STU_OS_NAMES']
 		os_disks = options['wfconfig']['STU_OS_DISKS']
+		vm_folder_name = option['wfconfig']['STU_VM_FOLDER']
 
 	## Allocate a hostname #################################################
 
@@ -143,7 +145,10 @@ def run(helper, options):
 
 	# Get the vm folder to use if any
 	vm_folder = None
-	if "default_folder" in helper.config['VMWARE'][vcenter_tag]:
+	if vm_folder_name is not None:
+		vm_folder = vm_folder_name
+
+	elif "default_folder" in helper.config['VMWARE'][vcenter_tag]:
 		vm_folder = helper.config['VMWARE'][vcenter_tag]['default_folder']
 
 	# Launch the task to clone the virtual machine
