@@ -10,6 +10,7 @@ import re
 from cortex.corpus import Corpus
 
 workflow = CortexWorkflow(__name__)
+app.workflows.update({__name__: workflow})
 workflow.add_permission('buildvm.sandbox', 'Create Sandbox VM')
 workflow.add_permission('buildvm.standard', 'Create Standard VM')
 workflow.add_permission('buildvm.student', 'Create Student VM')
@@ -236,6 +237,7 @@ def student():
 		options['comments'] = comments
 		options['expiry'] = expiry
 		options['sendmail'] = sendmail
+		options['wfconfig'] = workflow.config
 
 		# Check if manual approval is required
 		## They have too many VMs, the VM is to be public facing or is set to expire in over a year
@@ -253,21 +255,27 @@ def student():
 			except mysql.Error as e:
 				flash('An internal error occurred and your request could not be processed', 'alert-warning')
 
-			return redirect(url_for('dashboard'))
+			return redirect(url_for('sysrequests'))
 
+		try:
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `fqdn`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`, `updated_at`, `updated_who`) VALUES (NOW(), %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
+			params = ( session['username'], options['fqdn'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 2, session['username'])
+			curd.execute(sql, params)
 
+			g.db.commit()
 
+			flash('Your request has been automatically approved', 'alert-success')
+		except mysql.Error as e:
+			flash('An internal error occurred and your request could not be processed', 'alert-warning')
 
 		# Redirect to the status page for the task
 		return redirect(url_for('dashboard'))
-		#return redirect(url_for('task_status', id=start_task(options)))
+		# Connect to NeoCortex and start the task
+		#neocortex = cortex.lib.core.neocortex_connect()
+		#task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
+		#return redirect(url_for('task_status', id=task_id))
 
-################################################################################
-def start_task(options):
-	options['wfconfig'] = workflow.config
-	# Connect to NeoCortex and start the task
-	neocortex = cortex.lib.core.neocortex_connect()
-	return neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
 
 
 ################################################################################
