@@ -10,7 +10,6 @@ import re
 from cortex.corpus import Corpus
 
 workflow = CortexWorkflow(__name__)
-app.workflows.update({__name__: workflow})
 workflow.add_permission('buildvm.sandbox', 'Create Sandbox VM')
 workflow.add_permission('buildvm.standard', 'Create Standard VM')
 workflow.add_permission('buildvm.student', 'Create Student VM')
