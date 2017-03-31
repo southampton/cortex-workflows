@@ -238,9 +238,25 @@ def student():
 		options['sendmail'] = sendmail
 		options['wfconfig'] = workflow.config
 
-		# Check if manual approval is required
-		## They have too many VMs, the VM is to be public facing or is set to expire in over a year
 
+		# check if task is running
+		try:
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			stmt = 'SELECT COUNT(*) AS `count` FROM `tasks` WHERE `username`=%s AND `status`=0'
+			params = (session['username'],)
+			curd.execute(stmt, params)
+			tasks_in_progress = curd.fetchone()['count']
+			if tasks_in_progress > 0:
+				flash('You already have a task in progress', 'alert-warning')
+				abort(400)
+			
+		except mysql.Error as e:
+			flash('An internal error occurred and your request could not be processed', 'alert-warning')
+			abort(500)
+
+		# Check if manual approval is required
+		## They have too many VMs, the VM is to be public facing or is set to expire in over a year or a neocortex task is running
+		# need some way to prevent creation spam where vms are requested faster than they are built
 		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network == 'external' or expiry > datetime.datetime.utcnow() + datetime.timedelta(days=366):
 			try:
 				curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -268,12 +284,11 @@ def student():
 		except mysql.Error as e:
 			flash('An internal error occurred and your request could not be processed', 'alert-warning')
 
-		# Redirect to the status page for the task
-		return redirect(url_for('dashboard'))
 		# Connect to NeoCortex and start the task
-		#neocortex = cortex.lib.core.neocortex_connect()
-		#task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
-		#return redirect(url_for('task_status', id=task_id))
+		neocortex = cortex.lib.core.neocortex_connect()
+		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
+		# Redirect to the status page for the task
+		return redirect(url_for('task_status', id=task_id))
 
 
 
