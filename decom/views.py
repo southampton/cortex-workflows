@@ -20,7 +20,7 @@ def decom_step1(id):
 	system = cortex.lib.systems.get_system_by_id(id)
 	if system is None:
 		abort(404)
-	
+
 	return workflow.render_template("step1.html", system=system, title="Decommission system")
 
 @workflow.action("check",title='Decomission', system_permission="decom", permission="systems.all.decom",menu=False)
@@ -49,7 +49,7 @@ def decom_step2(id):
 					# We found the environment matching the system
 					systemenv = env
 					break
-					
+
 
 	## Is the system linked to vmware?
 	if 'vmware_uuid' in system:
@@ -62,7 +62,7 @@ def decom_step2(id):
 				if vmobj:
 					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
 						actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system['name'], 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
-			
+
 					actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system['name'], 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
 	## Is the system linked to service now?
@@ -94,6 +94,11 @@ def decom_step2(id):
 			if len(system['puppet_certname']) > 0:
 				actions.append({'id': 'puppet.cortex.delete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + request.url_root, 'data': system['id']})
 				actions.append({'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + app.config['PUPPET_MASTER'], 'data': system['puppet_certname']})
+
+	## Check if TSM backups exist
+	tsm_client = corpus.tsm_get_system(system['name'])
+	if tsm_client:
+		actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': tsm_client['NAME']  + ' on server ' + tsm_client['SERVER'], 'data': {'NAME': tsm_client['NAME'], 'SERVER': tsm_client['SERVER']}})
 
 	# We need to check all (unique) AD domains as we register development
 	# Linux boxes to the production domain
@@ -138,7 +143,7 @@ def decom_step3(id):
 	options = {}
 	options['actions'] = actions
 	options['wfconfig'] = workflow.config
-	
+
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
 	task_id = neocortex.create_task(__name__, session['username'], options, description="Decommissions a system")

@@ -1,4 +1,6 @@
 import requests
+import syslog
+import traceback
 
 def run(helper, options):
 
@@ -23,6 +25,8 @@ def run(helper, options):
 			r = action_ad_delete(action, helper)
 		elif action['id'] == "ticket.ops":
 			r = action_ticket_ops(action, helper, options['wfconfig'])
+		elif action['id'] == "tsm.decom":
+			r = action_tsm_decom(action, helper)
 
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
@@ -162,3 +166,11 @@ def action_ticket_ops(action, helper, wfconfig):
 		helper.end_event(success=False, description="Failed to raise ticket: " + str(e))
 		return False
 
+def action_tsm_decom(action, helper):
+    try:
+        helper.lib.tsm_decom_system(action['data']['NAME'], action['data']['SERVER'])
+        return True
+    except Exception as e:
+        syslog.syslog(traceback.format_exc())
+        helper.end_event(success=False, description="Failed to decomission system in TSM")
+        return False
