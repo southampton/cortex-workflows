@@ -97,7 +97,7 @@ def decom_step2(id):
 
 	## Check if TSM backups exist
 	tsm_client = corpus.tsm_get_system(system['name'])
-	if tsm_client:
+	if tsm_client and tsm_client['DECOMMISSIONED'] is None:
 		actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': tsm_client['NAME']  + ' on server ' + tsm_client['SERVER'], 'data': {'NAME': tsm_client['NAME'], 'SERVER': tsm_client['SERVER']}})
 
 	# We need to check all (unique) AD domains as we register development

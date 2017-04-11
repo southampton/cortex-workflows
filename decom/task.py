@@ -1,6 +1,4 @@
 import requests
-import syslog
-import traceback
 
 def run(helper, options):
 
@@ -171,6 +169,5 @@ def action_tsm_decom(action, helper):
         helper.lib.tsm_decom_system(action['data']['NAME'], action['data']['SERVER'])
         return True
     except Exception as e:
-        syslog.syslog(traceback.format_exc())
         helper.end_event(success=False, description="Failed to decomission system in TSM")
         return False
