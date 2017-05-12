@@ -96,9 +96,15 @@ def decom_step2(id):
 				actions.append({'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + app.config['PUPPET_MASTER'], 'data': system['puppet_certname']})
 
 	## Check if TSM backups exist
-	tsm_client = corpus.tsm_get_system(system['name'])
-	if tsm_client and tsm_client['DECOMMISSIONED'] is None:
-		actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': tsm_client['NAME']  + ' on server ' + tsm_client['SERVER'], 'data': {'NAME': tsm_client['NAME'], 'SERVER': tsm_client['SERVER']}})
+	try:
+		tsm_client = corpus.tsm_get_system(system['name'])
+		#if the TSM client is not decomissioned, then decomission it
+		if tsm_client['DECOMMISSIONED'] is None:
+			actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': tsm_client['NAME']  + ' on server ' + tsm_client['SERVER'], 'data': {'NAME': tsm_client['NAME'], 'SERVER': tsm_client['SERVER']}})
+	except requests.execptions.HTTPError as e:
+		flash("Warning - An error occured when communicating with TSM ", "alert-warning")
+	except LookupError:
+		pass
 
 	# We need to check all (unique) AD domains as we register development
 	# Linux boxes to the production domain
