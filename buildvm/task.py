@@ -25,6 +25,7 @@ def run(helper, options):
 		sn_location = options['wfconfig']['SN_LOCATION']
 		network_name = options['wfconfig']['NETWORK_NAME']
 		cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
+		cluster_rpool = options['wfconfig']['CLUSTER_RPOOL']
 		notify_emails = options['notify_emails']
 		win_groups = options['wfconfig']['WIN_GROUPS']
 		os_templates = options['wfconfig']['OS_TEMPLATES']
@@ -43,6 +44,7 @@ def run(helper, options):
 		sn_location = options['wfconfig']['SB_SN_LOCATION']
 		network_name = options['wfconfig']['SB_NETWORK_NAME']
 		cluster_storage_pools = options['wfconfig']['SB_CLUSTER_STORAGE_POOLS']
+		cluster_rpool = options['wfconfig']['SB_CLUSTER_RPOOL']
 		win_groups = options['wfconfig']['SB_WIN_GROUPS']
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
@@ -129,8 +131,11 @@ def run(helper, options):
 	if "default_folder" in helper.config['VMWARE'][vcenter_tag]:
 		vm_folder = helper.config['VMWARE'][vcenter_tag]['default_folder']
 
+	# Get the vm resource pool to use if any
+	vm_rpool = cluster_rpool.get(options['cluster'], "Root Resource Pool")
+
 	# Launch the task to clone the virtual machine
-	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool="Root Resource Pool", vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder, vm_network=network_name, vm_datastore_cluster=cluster_storage_pools[options['cluster']])
+	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool=vm_rpool, vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder, vm_network=network_name, vm_datastore_cluster=cluster_storage_pools[options['cluster']])
 	helper.lib.vmware_task_complete(task, "Failed to create the virtual machine")
 
 	# End the event
