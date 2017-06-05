@@ -38,7 +38,7 @@ def decom_step2(id):
 	if system is None:
 		abort(404)
 
-	actions = []
+	actions = {}
 
 	systemenv = None
 	## Find the environment that this VM is in based off of the CMDB env
@@ -49,7 +49,6 @@ def decom_step2(id):
 					# We found the environment matching the system
 					systemenv = env
 					break
-					
 
 	## Is the system linked to vmware?
 	if 'vmware_uuid' in system:
@@ -61,9 +60,8 @@ def decom_step2(id):
 
 				if vmobj:
 					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
-						actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system['name'], 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
-			
-					actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system['name'], 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+						actions['vm.poweroff'] = {'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system['name'], 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}}
+					actions['vm.delete'] = {'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system['name'], 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}}
 
 	## Is the system linked to service now?
 	if 'cmdb_id' in system:
@@ -72,10 +70,10 @@ def decom_step2(id):
 
 				if system['cmdb_is_virtual']:
 					if system['cmdb_operational_status'] != u'Deleted':
-						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Deleted in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
+						actions['cmdb.update'] = {'id': 'cmdb.update', 'desc': 'Mark the system as Deleted in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']}
 				else:
 					if system['cmdb_operational_status'] != u'Decommissioned':
-						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Decommissioned in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
+						actions['cmdb.update'] = {'id': 'cmdb.update', 'desc': 'Mark the system as Decommissioned in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']}
 
 	## Ask infoblox if a DNS host object exists for the name of the system
 	try:
@@ -83,7 +81,7 @@ def decom_step2(id):
 
 		if refs is not None:
 			for ref in refs:
-				actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.soton.ac.uk - Infoblox reference: ' + ref, 'data': ref})
+				actions['dns.delete'] = {'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.soton.ac.uk - Infoblox reference: ' + ref, 'data': ref}
 
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with Infoblox: " + str(type(ex)) + " - " + str(ex),"alert-warning")
@@ -92,8 +90,8 @@ def decom_step2(id):
 	if 'puppet_certname' in system:
 		if system['puppet_certname'] is not None:
 			if len(system['puppet_certname']) > 0:
-				actions.append({'id': 'puppet.cortex.delete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + request.url_root, 'data': system['id']})
-				actions.append({'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + app.config['PUPPET_MASTER'], 'data': system['puppet_certname']})
+				actions['puppet.cortex.delte'] = {'id': 'puppet.cortex.delete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + request.url_root, 'data': system['id']}
+				actions['puppet.master.delete'] = {'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + app.config['PUPPET_MASTER'], 'data': system['puppet_certname']}
 
 	# We need to check all (unique) AD domains as we register development
 	# Linux boxes to the production domain
@@ -107,14 +105,14 @@ def decom_step2(id):
 
 				# If an AD object exists, append an action to delete it from that environment
 				if corpus.windows_computer_object_exists(adenv, system['name']):
-					actions.append({'id': 'ad.delete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + app.config['WINRPC'][adenv]['domain'], 'data': {'hostname': system['name'], 'env': adenv}})
+					actions['ad.delete'] = {'id': 'ad.delete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + app.config['WINRPC'][adenv]['domain'], 'data': {'hostname': system['name'], 'env': adenv}}
 
 		except Exception as ex:
 			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
 
 	# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
 	if len(actions) > 0 and system['class'] != "play":
-		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
+		actions['ticket.ops'] = {'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}}
 
 	# Turn the actions list into a signed JSON document via itsdangerous
 	signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
@@ -135,10 +133,12 @@ def decom_step3(id):
 		abort(400)
 
 	# Build the options to send on to the task
-	options = {}
-	options['actions'] = actions
+	options = {'actions': []}
+	if request.form.get("runaction", None) is not None:
+		for action in request.form.getlist("runaction"):
+			options['actions'].append(actions[action])
 	options['wfconfig'] = workflow.config
-	
+
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
 	task_id = neocortex.create_task(__name__, session['username'], options, description="Decommissions a system")
