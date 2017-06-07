@@ -8,12 +8,12 @@
 
 <form role="form" action="{{ url_for('decom_step3',id=system['id']) }}" method="POST">
 	<ul class="list-group">
-	{% for id, action in actions.iteritems() %}
+	{% for action in actions %}
 	<li class="list-group-item">
 		<div class="checkbox">
 			<label>
-				<input type="checkbox" name="runaction" value="{{id}}" checked>
-				<span class="badge">{{id}}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
+				<input type="checkbox" name="runaction" value="{{ loop.index0 }}" checked>
+				<span class="badge">{{ loop.index0 }}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
 				<br/><span class="text-muted">{{action.detail}}</span>
 			</label>
 		</div>
