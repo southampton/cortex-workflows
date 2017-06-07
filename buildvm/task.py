@@ -30,6 +30,7 @@ def run(helper, options):
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
+		vm_folder_name = None
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -47,6 +48,24 @@ def run(helper, options):
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
+		vm_folder_name = None
+	elif workflow == 'student':
+		prefix = options['wfconfig']['STU_PREFIX']
+		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
+		domain = options['wfconfig']['STU_DOMAIN']
+		win_full_name = options['wfconfig']['STU_WIN_FULL_NAME']
+		win_org_name = options['wfconfig']['STU_WIN_ORG_NAME']
+		win_location = options['wfconfig']['STU_WIN_LOCATION']
+		win_os_domain = options['wfconfig']['STU_WIN_OS_DOMAIN']
+		win_dev_os_domain = options['wfconfig']['STU_WIN_DEV_OS_DOMAIN']
+		sn_location = options['wfconfig']['STU_SN_LOCATION']
+		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
+		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
+		win_groups = options['wfconfig']['STU_WIN_GROUPS']
+		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
+		os_names = options['wfconfig']['STU_OS_NAMES']
+		os_disks = options['wfconfig']['STU_OS_DISKS']
+		vm_folder_name = option['wfconfig']['STU_VM_FOLDER']
 
 	## Allocate a hostname #################################################
 
@@ -95,8 +114,8 @@ def run(helper, options):
 	os_name =       os_names[options['template']]
 	os_disk_size =  os_disks[options['template']]
 
-	# For RHEL6 or RHEL7:
-	if options['template'] == 'rhel6' or options['template'] == 'rhel7' or options['template'] == 'rhel6c':
+	# For RHEL6, RHEL7 or Ubuntu:
+	if options['template'] in ['rhel6', 'rhel7', 'rhel6c', 'ubuntu_14.04_lts']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		vm_spec = None
 
@@ -110,7 +129,7 @@ def run(helper, options):
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 			else:
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
-		elif workflow == 'sandbox':
+		elif workflow in ['sandbox', 'student']:
 			if options['env'] == 'dev':
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 			else:
@@ -126,7 +145,10 @@ def run(helper, options):
 
 	# Get the vm folder to use if any
 	vm_folder = None
-	if "default_folder" in helper.config['VMWARE'][vcenter_tag]:
+	if vm_folder_name is not None:
+		vm_folder = vm_folder_name
+
+	elif "default_folder" in helper.config['VMWARE'][vcenter_tag]:
 		vm_folder = helper.config['VMWARE'][vcenter_tag]['default_folder']
 
 	# Launch the task to clone the virtual machine
@@ -242,7 +264,7 @@ def run(helper, options):
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
 	if workflow == 'standard':
 		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
-	elif workflow == 'sandbox':
+	elif workflow in ['sandbox', 'student']:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
 
 	# Power on the VM
@@ -407,29 +429,39 @@ def run(helper, options):
 	# Build the text of the message
 	message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
 	message += '\n'
-	if workflow == 'standard':
-		message += 'ServiceNow Task: ' + str(options['task']) + '\n'
-	message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
-	if ipv4addr is not None:
-		message += 'IP Address: ' + str(ipv4addr) + '\n'
-	message += 'VMware Cluster: ' + str(options['cluster']) + '\n'
-	message += 'Purpose: ' + str(options['purpose']) + '\n'
-	message += 'Operating System: ' + str(os_name) + '\n'
-	message += 'CPUs: ' + str(total_cpu) + '\n'
-	message += 'RAM: ' + str(options['ram']) + ' GiB\n'
-	message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
-	message += '\n'
-	message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
-	message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
-	if sys_id is not None:
-		message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
-	else:
-		message += 'A ServiceNow CI was not created. For more information, see the task event log.\n'
+	if workflow in ['standard', 'sandbox']:
+		if workflow == 'standard':
+			message += 'ServiceNow Task: ' + str(options['task']) + '\n'
+		message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+		if ipv4addr is not None:
+			message += 'IP Address: ' + str(ipv4addr) + '\n'
+		message += 'VMware Cluster: ' + str(options['cluster']) + '\n'
+		message += 'Purpose: ' + str(options['purpose']) + '\n'
+		message += 'Operating System: ' + str(os_name) + '\n'
+		message += 'CPUs: ' + str(total_cpu) + '\n'
+		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
+		message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
+		message += '\n'
+		message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
+		message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
+		if sys_id is not None:
+			message += 'The ServiceNow CI entry is available at ' + (helper.config['CMDB_URL_FORMAT'] % sys_id) + '\n'
+		else:
+			message += 'A ServiceNow CI was not created. For more information, see the task event log.\n'
 
-	message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter'
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
-		message += ' and to an appropriate OU in Active Directory'
-	message += '\n'
+		message += '\nPlease remember to move the virtual machine into an appropriate folder in vCenter'
+		if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+			message += ' and to an appropriate OU in Active Directory'
+		message += '\n'
+	else:
+		message += 'Purpose: ' + str(options['purpose']) + '\n'
+		message += 'Operating System: ' + str(os_name) + '\n'
+		message += 'CPUs: ' + str(total_cpu) + '\n'
+		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
+		message += '\n'
+		message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
+		message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
+		
 
 	# Send the message to the user who started the task (if they want it)
 	if options['sendmail']:
