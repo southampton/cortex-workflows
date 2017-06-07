@@ -146,8 +146,10 @@ def decom_step3(id):
 		abort(400)
 
 	# Build the options to send on to the task
-	options = {}
-	options['actions'] = actions
+	options = {'actions': []}
+	if request.form.get("runaction", None) is not None:
+		for action in request.form.getlist("runaction"):
+			options['actions'].append(actions[int(action)])
 	options['wfconfig'] = workflow.config
 
 	# Connect to NeoCortex and start the task
